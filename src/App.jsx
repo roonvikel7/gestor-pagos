@@ -42,7 +42,7 @@ function App() {
       
       const isStudentAuth = localStorage.getItem('app_student_auth') === 'true';
 
-      if (isAuthenticated && poppedView !== 'admin-dashboard') {
+      if (isAuthenticated && view === 'admin-dashboard' && poppedView !== 'admin-dashboard') {
          const url = new URL(window.location);
          url.searchParams.set('view', 'admin-dashboard');
          window.history.pushState({}, '', url);
@@ -51,7 +51,7 @@ function App() {
          return;
       }
 
-      if (isStudentAuth && poppedView !== 'student') {
+      if (isStudentAuth && view === 'student' && poppedView !== 'student') {
          const url = new URL(window.location);
          url.searchParams.set('view', 'student');
          window.history.pushState({}, '', url);
@@ -118,9 +118,15 @@ function App() {
   const handleSetView = (newView) => {
     if (newView === view) return;
     
-    if (newView === 'home' && (isAuthenticated || localStorage.getItem('app_student_auth') === 'true')) {
-      triggerLogoutAlert();
-      return;
+    if (newView === 'home') {
+      if ((view === 'admin-dashboard' || view === 'super-login' || view === 'admin-login') && isAuthenticated) {
+        triggerLogoutAlert();
+        return;
+      }
+      if (view === 'student' && localStorage.getItem('app_student_auth') === 'true') {
+        triggerLogoutAlert();
+        return;
+      }
     }
 
     // Auto-redirect if they try to login but are already authenticated for that role
