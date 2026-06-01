@@ -95,7 +95,23 @@ function doPost(e) {
     if (action === 'addActivity') {
       sheet = ss.getSheetByName('Activities');
       const id = Utilities.getUuid();
-      sheet.appendRow([id, data.name, data.amount, new Date(), 'active']);
+      
+      const idIdx = getColumnIndex(sheet, 'ID');
+      const nameIdx = getColumnIndex(sheet, 'Name');
+      const amountIdx = getColumnIndex(sheet, 'Amount');
+      const timeIdx = getColumnIndex(sheet, 'Timestamp');
+      const statusIdx = getColumnIndex(sheet, 'Status');
+      const deadlineIdx = getColumnIndex(sheet, 'Deadline');
+      
+      const row = [];
+      row[idIdx] = id;
+      row[nameIdx] = data.name;
+      row[amountIdx] = data.amount;
+      row[timeIdx] = new Date();
+      row[statusIdx] = 'active';
+      row[deadlineIdx] = ''; 
+      sheet.appendRow(row);
+      
       return createSuccessResponse({ id: id, name: data.name, amount: data.amount });
       
     } else if (action === 'addStudents') {
@@ -217,6 +233,25 @@ function doPost(e) {
       if (rowIndex !== -1) {
         sheet.deleteRow(rowIndex);
         return createSuccessResponse({ deleted: true, activityId: data.activityId });
+      } else {
+        return createErrorResponse('Activity not found');
+      }
+      
+    } else if (action === 'setActivityDeadline') {
+      sheet = ss.getSheetByName('Activities');
+      const idIdx = getColumnIndex(sheet, 'ID');
+      const deadlineIdx = getColumnIndex(sheet, 'Deadline');
+      const values = sheet.getDataRange().getValues();
+      let updated = false;
+      for (let i = 1; i < values.length; i++) {
+        if (values[i][idIdx] === data.activityId) {
+          sheet.getRange(i + 1, deadlineIdx + 1).setValue(data.deadline || '');
+          updated = true;
+          break;
+        }
+      }
+      if (updated) {
+        return createSuccessResponse({ updated: true, activityId: data.activityId, deadline: data.deadline });
       } else {
         return createErrorResponse('Activity not found');
       }

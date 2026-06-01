@@ -1,5 +1,92 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut, Cake, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut, Cake, Trash2, CalendarClock } from 'lucide-react';
+import ImageModal from '../components/ImageModal';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as htmlToImage from 'html-to-image';
+import ExcelReportTemplate from '../components/ExcelReportTemplate';
+import { getRandomPassword } from '../utils/passwords';
+
+export default function AdminDashboard({ setView, globalData, fetchGlobalData, scriptUrl, onLogout, role }) {
+  const [activeTab, setActiveTabState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'pagos';
+  });
+
+  const setActiveTab = (newTab) => {
+    if (newTab === activeTab) return;
+    setActiveTabState(newTab);
+    const url = new URL(window.location);
+    url.searchParams.set('view', 'admin-dashboard');
+    url.searchParams.set('tab', newTab);
+    window.history.pushState({}, '', url);
+  };
+
+  const tabs = role === 'admin' ? ['pagos', 'actividades', 'alumnos'] : ['pagos', 'actividades'];
+
+  React.useEffect(() => {
+    if (role === 'tesorera' && activeTab === 'alumnos') {
+      setActiveTab('pagos');
+    }
+  }, [role, activeTab]);
+
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  React.useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      let t = params.get('tab');
+      if (!t || !tabs.includes(t)) t = tabs[0];
+      setActiveTabState(t);
+      if (params.get('modal') !== 'image') {
+        setSelectedImage(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [treasurerName, setTreasurerName] = useState(() => localStorage.getItem('app_treasurer_name') || '');
+  const [treasurerGender, setTreasurerGender] = useState(() => localStorage.getItem('app_treasurer_gender') || 'a');
+
+  React.useEffect(() => {
+    if (role === 'tesorera') {
+      const timer = setTimeout(() => setShowWelcome(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [role]);
+  
+  // Modals (moved up)
+
+  const openImageModal = (image) => {
+    setSelectedImage(image);
+    const url = new URL(window.location);
+    url.searchParams.set('modal', 'image');
+    window.history.pushState({}, '', url);
+  };
+
+  const closeImageModal = () => {
+    if (new URLSearchParams(window.location.search).get('modal') === 'image') {
+      window.history.back(); // This triggers popstate, which clears the selectedImage
+    } else {
+      setSelectedImage(null);
+    }
+  };
+  
+  // Exemption Modal State
+  const [showExemptionModal, setShowExemptionModal] = useState(false);
+  const [selectedActForExemption, setSelectedActForExemption] = useState(null);
+  const [exemptionStudentId, setExemptionStudentId] = useState('');
+  const [exemptionReason, setExemptionReason] = useState('');
+
+  // Form States
+  const [newActivityName, setNewActivityName] = useState('');
+  const [newActivityAmount, setNewActivityAmount] = useState('');
+  const [studentListText, setStudentListText] = useState('');
+import React, { useState } from 'react';
+import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut, Cake, Trash2, CalendarClock } from 'lucide-react';
 import ImageModal from '../components/ImageModal';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -94,6 +181,11 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
   const [deleteAdminPassword, setDeleteAdminPassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
 
+  // Deadline State
+  const [showDeadlineModal, setShowDeadlineModal] = useState(false);
+  const [activityToSetDeadline, setActivityToSetDeadline] = useState(null);
+  const [deadlineValue, setDeadlineValue] = useState('');
+
   const activities = globalData?.activities || [];
   const students = globalData?.students || [];
   const payments = globalData?.payments || [];
@@ -165,6 +257,36 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       }
     } catch(err) {
       setDeleteError('Error de red al eliminar actividad');
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleSetDeadline = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setMsg({ type: '', text: '' });
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'setActivityDeadline',
+          activityId: activityToSetDeadline.ID,
+          deadline: deadlineValue
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        setShowDeadlineModal(false);
+        setActivityToSetDeadline(null);
+        setDeadlineValue('');
+        setMsg({ type: 'success', text: 'Fecha de cierre actualizada' });
+        fetchGlobalData();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    } catch(err) {
+      alert('Error de red al actualizar fecha límite');
     }
     setIsSubmitting(false);
   };
@@ -796,8 +918,18 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                             Pausada
                           </span>
                         )}
+                        {act.Deadline && new Date(act.Deadline) < new Date() && (
+                          <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full border border-red-200 font-bold">
+                            Cerrada
+                          </span>
+                        )}
                       </h4>
-                      <p className="text-sm text-gray-500">Monto: S/ {act.Amount}</p>
+                      <p className="text-sm text-gray-500 mb-1">Monto: S/ {act.Amount}</p>
+                      {act.Deadline && (
+                        <p className="text-xs text-gray-500 font-medium">
+                          Cierre: {new Date(act.Deadline).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <button 
@@ -807,6 +939,12 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                       >
                         {act.Status === 'paused' ? <Play size={16} /> : <Pause size={16} />}
                         {act.Status === 'paused' ? 'Reanudar' : 'Pausar'}
+                      </button>
+                      <button 
+                        onClick={() => { setActivityToSetDeadline(act); setDeadlineValue(act.Deadline || ''); setShowDeadlineModal(true); }}
+                        className="flex items-center gap-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg font-medium transition"
+                      >
+                        <CalendarClock size={16} /> Programar
                       </button>
                       <button 
                         onClick={() => { setSelectedActForExemption(act); setShowExemptionModal(true); }}
@@ -1085,6 +1223,47 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                   </button>
                   <button type="submit" disabled={isSubmitting || deleteAdminPassword.length !== 4} className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition disabled:opacity-50">
                     {isSubmitting ? 'Eliminando...' : 'Eliminar'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deadline Modal */}
+      {showDeadlineModal && activityToSetDeadline && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-blue-50">
+              <h3 className="text-xl font-bold text-blue-900 flex items-center gap-2">
+                <CalendarClock size={20} className="text-blue-600" />
+                Programar Cierre
+              </h3>
+              <button onClick={() => setShowDeadlineModal(false)} className="text-blue-500 hover:bg-blue-100 p-2 rounded-full transition">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700 mb-4 text-sm">
+                Selecciona la fecha y hora límite para la actividad <strong>{activityToSetDeadline.Name}</strong>. 
+                Dejar vacío para mantenerla siempre abierta.
+              </p>
+              <form onSubmit={handleSetDeadline} className="space-y-4">
+                <div>
+                  <input
+                    type="datetime-local"
+                    value={deadlineValue}
+                    onChange={(e) => setDeadlineValue(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl p-3 bg-gray-50 outline-none transition focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button type="button" onClick={() => setShowDeadlineModal(false)} className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition">
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={isSubmitting} className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center justify-center transition disabled:opacity-50">
+                    {isSubmitting ? 'Guardando...' : 'Guardar'}
                   </button>
                 </div>
               </form>

@@ -41,13 +41,19 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
 
   const fileInputRef = useRef(null);
 
-  const hasAlreadyPaid = globalData?.payments?.some(
-    p => p.StudentID === selectedStudent && p.ActivityID === selectedActivity
-  );
+  const getExistingPayment = () => {
+    return globalData?.payments?.find(p => p.StudentID === selectedStudent && p.ActivityID === selectedActivity);
+  };
   
-  const isExempted = globalData?.exemptions?.some(
-    e => e.StudentID === selectedStudent && e.ActivityID === selectedActivity
-  );
+  const getExistingExemption = () => {
+    return globalData?.exemptions?.find(p => p.StudentID === selectedStudent && p.ActivityID === selectedActivity);
+  };
+
+  const selectedActivityData = activities.find(act => act.ID === selectedActivity);
+  const isClosed = selectedActivityData?.Deadline ? new Date(selectedActivityData.Deadline) < new Date() : false;
+
+  const hasAlreadyPaid = !!getExistingPayment();
+  const isExempted = !!getExistingExemption();
 
   useEffect(() => {
     if (globalData) {
@@ -316,7 +322,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                     onClick={openImageModal}
                   />
                   
-                  {!isEditing ? (
+                  {!isEditing && !isClosed ? (
                     <button 
                       type="button"
                       onClick={() => setIsEditing(true)}
@@ -325,6 +331,10 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                     >
                       Editar comprobante (Te quedan {3 - (getExistingPayment()?.Attempts || 1)} intentos)
                     </button>
+                  ) : !isEditing && isClosed ? (
+                    <div className="w-full bg-gray-100 text-gray-500 font-medium py-3 px-4 rounded-lg text-center text-sm border border-gray-200">
+                      El plazo para modificar este comprobante ha expirado.
+                    </div>
                   ) : (
                     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm mt-4">
                        <h4 className="font-bold text-gray-800 mb-3 text-center">Subir Nuevo Comprobante</h4>
@@ -355,6 +365,14 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                 <CheckCircle2 size={40} className="text-gray-400 mx-auto mb-3" />
                 <h3 className="font-bold text-gray-800 text-lg">No participas en esta actividad</h3>
                 <p className="text-sm text-gray-600 mt-1">Has sido marcado como exonerado por la tesorera. No es necesario que envíes ningún comprobante.</p>
+              </div>
+            ) : isClosed ? (
+              <div className="bg-orange-50 border border-orange-200 p-6 rounded-xl text-center shadow-sm">
+                <CalendarClock size={40} className="text-orange-500 mx-auto mb-3" />
+                <h3 className="font-bold text-orange-800 text-lg">Actividad Cerrada</h3>
+                <p className="text-sm text-orange-700 mt-2">
+                  El plazo para subir comprobantes de pago de esta actividad ha finalizado. Por favor, realiza el pago y entrega el comprobante (o el dinero en efectivo) directamente a la tesorera en el aula.
+                </p>
               </div>
             ) : (
               <div>
