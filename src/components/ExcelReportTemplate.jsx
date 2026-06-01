@@ -19,7 +19,8 @@ export default function ExcelReportTemplate({ id, activity, students, payments, 
     let bgColor = 'white';
 
     if (exemption) {
-      pago = '●';
+      const isBirthday = activity.Name.toLowerCase().includes('cumpleaño') || activity.Name.toLowerCase().includes('cumpleano');
+      pago = isBirthday ? '🎂' : '●';
       totalStr = 'S/ 0.00';
       pagoColor = 'black';
       bgColor = '#d9d9d9'; // Gray

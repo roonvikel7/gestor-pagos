@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut } from 'lucide-react';
+import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut, Cake } from 'lucide-react';
 import ImageModal from '../components/ImageModal';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -527,6 +527,13 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col relative">
+      {/* Floating Welcome (Fixed and Pastel) */}
+      {showWelcome && role === 'tesorera' && treasurerName && (
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 bg-indigo-50 border border-indigo-200 text-indigo-700 px-6 py-3 rounded-full shadow-lg z-50 animate-bounce text-sm sm:text-base font-medium whitespace-nowrap">
+          ¡Bienvenid{treasurerGender} Tesorer{treasurerGender} {treasurerName}!
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -557,12 +564,6 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
 
       {/* Tabs */}
       <div className="bg-white border-b px-6 flex space-x-6 overflow-x-auto relative">
-        {/* Floating Welcome */}
-        {showWelcome && role === 'tesorera' && treasurerName && (
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-4 bg-indigo-600 text-white px-6 py-3 rounded-full shadow-2xl z-50 animate-bounce text-sm sm:text-base font-bold whitespace-nowrap">
-            ¡Bienvenid{treasurerGender} Tesorer{treasurerGender} {treasurerName}!
-          </div>
-        )}
         {tabs.map(tab => (
           <button
             key={tab}
@@ -605,15 +606,22 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                       </td>
                       {activities.map(act => {
                         const payment = getPaymentForStudentAndActivity(std.ID, act.ID);
-                        const exemption = getExemptionForStudentAndActivity(std.ID, act.ID);
+                        const ex = getExemptionForStudentAndActivity(std.ID, act.ID);
+                        
+                        if (ex) {
+                          const isBirthday = act.Name.toLowerCase().includes('cumpleaño') || act.Name.toLowerCase().includes('cumpleano');
+                          return (
+                            <td key={act.ID} className="p-3 sm:p-4 text-center border-r bg-gray-50/50">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                {isBirthday ? <Cake size={14} /> : <UserMinus size={14} />} {ex.Reason || 'No participa'}
+                              </span>
+                            </td>
+                          );
+                        }
                         
                         return (
                           <td key={act.ID} className="p-3 sm:p-4 text-center border-r whitespace-nowrap">
-                            {exemption ? (
-                              <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-bold" title={exemption.Reason}>
-                                <UserMinus size={14} /> No participa
-                              </span>
-                            ) : payment ? (
+                            {payment ? (
                               <div className="flex flex-col items-center gap-2">
                                 <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
                                   <Check size={14} /> Pagó
