@@ -12,6 +12,12 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTqqbD5BLwe3eNmmXTM
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('app_auth') === 'true');
   const [userRole, setUserRole] = useState(() => localStorage.getItem('app_role') || '');
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+
+  const triggerLogoutAlert = () => {
+    setShowLogoutAlert(true);
+    setTimeout(() => setShowLogoutAlert(false), 3000);
+  };
 
   const [view, setViewState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -41,6 +47,7 @@ function App() {
          url.searchParams.set('view', 'admin-dashboard');
          window.history.pushState({}, '', url);
          setViewState('admin-dashboard');
+         triggerLogoutAlert();
          return;
       }
 
@@ -49,6 +56,7 @@ function App() {
          url.searchParams.set('view', 'student');
          window.history.pushState({}, '', url);
          setViewState('student');
+         triggerLogoutAlert();
          return;
       }
 
@@ -59,6 +67,41 @@ function App() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    let timeout;
+    const resetTimer = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        if (isAuthenticated || localStorage.getItem('app_student_auth') === 'true') {
+          globalLogout();
+        }
+      }, 180000); // 3 minutos
+    };
+
+    const events = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeout);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [isAuthenticated]);
+
+  const globalLogout = () => {
+    setIsAuthenticated(false);
+    setUserRole('');
+    localStorage.removeItem('app_auth');
+    localStorage.removeItem('app_role');
+    localStorage.removeItem('app_student_auth');
+    localStorage.removeItem('app_student_id');
+    
+    setViewState('home');
+    const url = new URL(window.location);
+    url.search = '?view=home';
+    window.history.pushState({}, '', url);
+  };
 
   const [globalData, setGlobalData] = useState({ activities: [], students: [], payments: [], exemptions: [] });
   const [isLoading, setIsLoading] = useState(true);
@@ -75,6 +118,11 @@ function App() {
   const handleSetView = (newView) => {
     if (newView === view) return;
     
+    if (newView === 'home' && (isAuthenticated || localStorage.getItem('app_student_auth') === 'true')) {
+      triggerLogoutAlert();
+      return;
+    }
+
     // Auto-redirect if they try to login but are already authenticated for that role
     if (newView === 'admin-login' && isAuthenticated && userRole === 'tesorera') {
       newView = 'admin-dashboard';
@@ -90,7 +138,7 @@ function App() {
 
     setViewState(newView);
     const url = new URL(window.location);
-    url.searchParams.set('view', newView);
+    url.search = '?view=' + newView;
     window.history.pushState({}, '', url);
   };
 
@@ -135,9 +183,7 @@ function App() {
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUserRole('');
-    setView('home');
+    globalLogout();
   };
 
   if (isLoading) {
@@ -156,6 +202,12 @@ function App() {
 
   return (
     <>
+      {showLogoutAlert && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl z-[9999] animate-bounce font-bold">
+          Debes cerrar sesión para salir de este panel.
+        </div>
+      )}
+
       {!isUrlConfigured && (
         <div className="bg-red-500 text-white text-center p-2 font-bold text-sm z-50 relative">
           ⚠️ Por favor, configura la SCRIPT_URL en App.jsx con el enlace de Google Apps Script.
