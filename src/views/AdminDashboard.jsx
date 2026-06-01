@@ -1,0 +1,714 @@
+import React, { useState } from 'react';
+import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle } from 'lucide-react';
+import ImageModal from '../components/ImageModal';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as htmlToImage from 'html-to-image';
+import ExcelReportTemplate from '../components/ExcelReportTemplate';
+
+export default function AdminDashboard({ setView, globalData, fetchGlobalData, scriptUrl }) {
+  const [activeTab, setActiveTab] = useState('pagos');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Modals
+  const [selectedImage, setSelectedImage] = useState(null);
+  
+  // Exemption Modal State
+  const [showExemptionModal, setShowExemptionModal] = useState(false);
+  const [selectedActForExemption, setSelectedActForExemption] = useState(null);
+  const [exemptionStudentId, setExemptionStudentId] = useState('');
+  const [exemptionReason, setExemptionReason] = useState('');
+
+  // Form States
+  const [newActivityName, setNewActivityName] = useState('');
+  const [newActivityAmount, setNewActivityAmount] = useState('');
+  const [studentListText, setStudentListText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [msg, setMsg] = useState({ type: '', text: '' });
+
+  const activities = globalData?.activities || [];
+  const students = globalData?.students || [];
+  const payments = globalData?.payments || [];
+  const exemptions = globalData?.exemptions || [];
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchGlobalData();
+    setIsRefreshing(false);
+  };
+
+  const handleAddActivity = async (e) => {
+    e.preventDefault();
+    if(!newActivityName || !newActivityAmount) return;
+    setIsSubmitting(true);
+    setMsg({ type: '', text: '' });
+
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'addActivity',
+          name: newActivityName,
+          amount: newActivityAmount
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        setMsg({ type: 'success', text: 'Actividad creada' });
+        setNewActivityName('');
+        setNewActivityAmount('');
+        fetchGlobalData();
+      } else {
+        setMsg({ type: 'error', text: 'Error del servidor: ' + (data.message || 'Desconocido') });
+      }
+    } catch(err) {
+      setMsg({ type: 'error', text: 'Error de red al crear actividad' });
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleAddStudents = async () => {
+    if(!studentListText.trim()) return;
+    setIsSubmitting(true);
+    setMsg({ type: '', text: '' });
+    
+    const names = studentListText.split('\n').map(n => n.trim()).filter(n => n);
+    
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'addStudents',
+          names: JSON.stringify(names)
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        setMsg({ type: 'success', text: `${names.length} alumnos agregados` });
+        setStudentListText('');
+        fetchGlobalData();
+      } else {
+        setMsg({ type: 'error', text: 'Error del servidor: ' + (data.message || 'Desconocido') });
+      }
+    } catch(err) {
+      setMsg({ type: 'error', text: 'Error de red al agregar alumnos' });
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleAddExemption = async (e) => {
+    e.preventDefault();
+    if(!exemptionStudentId) return;
+    setIsSubmitting(true);
+    
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'addExemption',
+          activityId: selectedActForExemption.ID,
+          studentId: exemptionStudentId,
+          reason: exemptionReason
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        alert('Alumno exonerado exitosamente');
+        setShowExemptionModal(false);
+        setExemptionStudentId('');
+        setExemptionReason('');
+        fetchGlobalData();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    } catch(err) {
+      alert('Error de red al exonerar alumno');
+    }
+    setIsSubmitting(false);
+  };
+
+  const copyLink = (actId) => {
+    const url = `${window.location.origin}${window.location.pathname}?actividad=${actId}`;
+    navigator.clipboard.writeText(url);
+    alert('Enlace copiado al portapapeles');
+  };
+
+  const exportPDF = (actId, actName) => {
+    try {
+      const doc = new jsPDF();
+      
+      doc.setFontSize(16);
+      doc.text(`Reporte de Pagos: ${actName}`, 14, 20);
+      
+      const tableData = students.sort((a,b)=>a.Name.localeCompare(b.Name)).map(std => {
+        const payment = getPaymentForStudentAndActivity(std.ID, actId);
+        const exemption = getExemptionForStudentAndActivity(std.ID, actId);
+        
+        let dateStr = '-';
+        if (payment && payment.Timestamp) {
+          const d = new Date(payment.Timestamp);
+          dateStr = isNaN(d) ? payment.Timestamp : d.toLocaleString('es-PE', { 
+            day: '2-digit', month: '2-digit', year: 'numeric', 
+            hour: '2-digit', minute:'2-digit', hour12: true 
+          });
+        }
+        
+        let estado = 'Falta';
+        if (payment) estado = 'Pagó';
+        if (exemption) estado = 'Exonerado';
+        
+        return [
+          std.Name,
+          estado,
+          dateStr,
+          payment ? payment.ImageBase64 : ''
+        ];
+      });
+      
+      autoTable(doc, {
+        startY: 30,
+        head: [['Alumno', 'Estado', 'Fecha de Envío', 'Comprobante']],
+        body: tableData.map(row => [row[0], row[1], row[2], '']),
+        bodyStyles: { minCellHeight: 45, valign: 'middle' },
+        headStyles: { fillColor: [79, 70, 229] },
+        didDrawCell: function(data) {
+          if (data.column.index === 3 && data.cell.section === 'body') {
+            const studentName = data.row.raw[0];
+            const rowData = tableData.find(r => r[0] === studentName);
+            const base64Img = rowData ? rowData[3] : null;
+            
+            if (base64Img) {
+              const dimX = 40; 
+              const dimY = 40;
+              const x = data.cell.x + (data.cell.width - dimX) / 2;
+              const y = data.cell.y + (data.cell.height - dimY) / 2;
+              try {
+                doc.addImage(base64Img, 'JPEG', x, y, dimX, dimY);
+              } catch(e) {
+                console.error('Error al dibujar imagen', e);
+              }
+            }
+          }
+        }
+      });
+      
+      doc.save(`Reporte_Img_${actName.replace(/\s+/g, '_')}.pdf`);
+    } catch(error) {
+      console.error(error);
+      alert('Hubo un error al generar el PDF: ' + error.message);
+    }
+  };
+
+  const exportExcelPDF = (actId, actName, actAmount) => {
+    try {
+      const doc = new jsPDF();
+      
+      // Blue Header
+      doc.setFillColor(68, 114, 196);
+      doc.rect(14, 14, 182, 10, 'F');
+      doc.setFontSize(14);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.text(`ACTIVIDAD: ${actName.toUpperCase()} - CONTROL DE PAGOS`, 105, 21, { align: 'center' });
+      
+      // Cream Subheader
+      doc.setFillColor(255, 242, 204);
+      doc.rect(14, 24, 182, 8, 'F');
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`FECHA: ${new Date().toLocaleDateString('es-PE')}`, 16, 29);
+      doc.text(`MONTO: S/ ${Number(actAmount).toFixed(2)}`, 194, 29, { align: 'right' });
+      
+      let totalRecaudado = 0;
+      let totalFaltante = 0;
+      let totalExpected = 0;
+
+      const tableData = students.sort((a,b)=>a.Name.localeCompare(b.Name)).map((std, index) => {
+        const payment = getPaymentForStudentAndActivity(std.ID, actId);
+        const exemption = getExemptionForStudentAndActivity(std.ID, actId);
+        
+        let pagoMark = '';
+        let totalStr = '';
+        let bg = [255, 255, 255];
+        let textColor = [0,0,0];
+        
+        if (exemption) {
+          pagoMark = '';
+          totalStr = 'S/ 0.00';
+          bg = [217, 217, 217]; // Gray
+        } else if (payment) {
+          pagoMark = '';
+          totalStr = `S/ ${Number(actAmount).toFixed(2)}`;
+          textColor = [0, 176, 80]; // Green
+          totalRecaudado += Number(actAmount);
+          totalExpected += Number(actAmount);
+        } else {
+          pagoMark = 'X';
+          totalStr = 'S/ 0.00';
+          textColor = [255, 0, 0]; // Red
+          totalFaltante += Number(actAmount);
+          totalExpected += Number(actAmount);
+        }
+        
+        return [
+          index + 1,
+          std.Name,
+          { content: pagoMark, styles: { fillColor: bg, textColor: textColor, fontStyle: 'bold' } },
+          totalStr
+        ];
+      });
+      
+      autoTable(doc, {
+        startY: 32,
+        head: [['N°', 'ESTUDIANTE', 'PAGO', 'TOTAL PAGADO']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [180, 198, 231], textColor: [0,0,0], fontStyle: 'bold', halign: 'center' },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 15 },
+          1: { cellWidth: 100 },
+          2: { halign: 'center', cellWidth: 25 },
+          3: { halign: 'right', cellWidth: 42 }
+        },
+        styles: { fontSize: 9, cellPadding: 1, lineColor: [0, 0, 0], lineWidth: 0.2 },
+        margin: { left: 14, right: 14 },
+        didDrawCell: function(data) {
+          if (data.column.index === 2 && data.cell.section === 'body') {
+            const studentName = data.row.raw[1];
+            const std = students.find(s => s.Name === studentName);
+            if (std) {
+              const payment = getPaymentForStudentAndActivity(std.ID, actId);
+              const exemption = getExemptionForStudentAndActivity(std.ID, actId);
+              
+              const x = data.cell.x + data.cell.width / 2;
+              const y = data.cell.y + data.cell.height / 2;
+              
+              if (exemption) {
+                doc.setFillColor(0, 0, 0);
+                doc.circle(x, y, 1.5, 'F');
+              } else if (payment) {
+                doc.setDrawColor(0, 176, 80); // Green
+                doc.setLineWidth(0.8);
+                // Draw checkmark perfectly centered and small
+                doc.line(x - 1.2, y, x - 0.3, y + 1.2);
+                doc.line(x - 0.3, y + 1.2, x + 1.5, y - 1.2);
+              }
+            }
+          }
+        }
+      });
+      
+      const finalY = doc.lastAutoTable.finalY;
+      
+      // Footer totals
+      autoTable(doc, {
+        startY: finalY,
+        body: [
+          ['TOTAL RECAUDADO', `S/ ${totalRecaudado.toFixed(2)}`],
+          ['TOTAL FALTANTE', `S/ ${totalFaltante.toFixed(2)}`],
+          ['TOTAL GENERAL', `S/ ${totalExpected.toFixed(2)}`]
+        ],
+        theme: 'grid',
+        styles: { fontSize: 10, cellPadding: 2, fontStyle: 'bold', lineColor: [0,0,0], lineWidth: 0.2, textColor: [0,0,0] },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 140 },
+          1: { halign: 'right', cellWidth: 42 }
+        },
+        margin: { left: 14, right: 14 },
+        didParseCell: function(data) {
+          if (data.row.index === 0) data.cell.styles.fillColor = [198, 224, 180]; // Green
+          if (data.row.index === 1) data.cell.styles.fillColor = [248, 203, 173]; // Orange
+          if (data.row.index === 2) data.cell.styles.fillColor = [189, 215, 238]; // Blue
+        }
+      });
+      
+      doc.save(`Control_${actName.replace(/\s+/g, '_')}.pdf`);
+    } catch (e) {
+      console.error(e);
+      alert('Error: ' + e.message);
+    }
+  };
+
+  const exportImage = async (actId, actName) => {
+    try {
+      const element = document.getElementById(`excel-report-${actId}`);
+      if (!element) {
+        alert("No se encontró la plantilla HTML oculta.");
+        return;
+      }
+      
+      const dataUrl = await htmlToImage.toPng(element, { pixelRatio: 2, backgroundColor: 'white' });
+      
+      const link = document.createElement('a');
+      link.download = `Control_${actName.replace(/\s+/g, '_')}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error(err);
+      alert('Hubo un error al generar la imagen: ' + (err.message || err.toString()));
+    }
+  };
+
+  const shareToWhatsApp = async (actId, actName) => {
+    try {
+      const element = document.getElementById(`excel-report-${actId}`);
+      if (!element) return;
+      
+      const dataUrl = await htmlToImage.toPng(element, { pixelRatio: 2, backgroundColor: 'white' });
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `Control_${actName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        // Soporte nativo para móviles o navegadores compatibles
+        await navigator.share({
+          files: [file],
+          title: `Reporte de Pagos: ${actName}`,
+          text: `Aquí tienes el reporte de la actividad: ${actName}`
+        });
+      } else {
+        // Fallback para computadoras de escritorio (WhatsApp Web)
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ [blob.type]: blob })
+          ]);
+          alert('¡Imagen COPIADA al portapapeles!\\n\\nTu navegador de PC no soporta envío directo. Ve a WhatsApp Web, abre el grupo y presiona Ctrl+V (Pegar) para enviarla.');
+        } catch (clipboardErr) {
+          alert('Tu navegador no soporta copiado directo. Se descargará la imagen para que la envíes manualmente a WhatsApp.');
+          exportImage(actId, actName);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      if (err.name !== 'AbortError') { // Ignorar si el usuario cancela el diálogo de compartir
+        alert('Hubo un error al intentar compartir: ' + (err.message || err.toString()));
+      }
+    }
+  };
+
+  // Matrix Logic
+  const getPaymentForStudentAndActivity = (studentId, activityId) => {
+    return payments.find(p => p.StudentID === studentId && p.ActivityID === activityId);
+  };
+  
+  const getExemptionForStudentAndActivity = (studentId, activityId) => {
+    return exemptions.find(e => e.StudentID === studentId && e.ActivityID === activityId);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col relative">
+      {/* Header */}
+      <header className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={() => setView('home')} className="text-gray-500 hover:text-gray-900 transition">
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-xl font-bold text-gray-900">Panel Tesorera</h1>
+        </div>
+        <button 
+          onClick={handleRefresh} 
+          className={`p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition ${isRefreshing ? 'animate-spin' : ''}`}
+        >
+          <RefreshCw size={20} />
+        </button>
+      </header>
+
+      {/* Tabs */}
+      <div className="bg-white border-b px-6 flex space-x-6 overflow-x-auto">
+        {['pagos', 'actividades', 'alumnos'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => { setActiveTab(tab); setMsg({type:'', text:''}); }}
+            className={`py-4 font-medium text-sm capitalize border-b-2 transition whitespace-nowrap ${activeTab === tab ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <main className="flex-1 p-6 overflow-auto">
+        {msg.text && (
+          <div className={`p-4 rounded-lg mb-6 ${msg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            {msg.text}
+          </div>
+        )}
+
+        {/* Pagos Tab */}
+        {activeTab === 'pagos' && (
+          <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-gray-50 text-gray-600 font-semibold border-b">
+                  <tr>
+                    <th className="p-4 sticky left-0 bg-gray-50 z-10 border-r shadow-[1px_0_0_0_#e5e7eb]">Alumno</th>
+                    {activities.map(act => (
+                      <th key={act.ID} className="p-4 text-center border-r min-w-[120px]">
+                        {act.Name} <br/><span className="text-xs font-normal text-gray-400">S/ {act.Amount}</span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {students.sort((a,b)=>a.Name.localeCompare(b.Name)).map(std => (
+                    <tr key={std.ID} className="hover:bg-gray-50 transition">
+                      <td className="p-4 sticky left-0 bg-white z-10 border-r shadow-[1px_0_0_0_#e5e7eb] font-medium text-gray-900 truncate max-w-[150px]">
+                        {std.Name}
+                      </td>
+                      {activities.map(act => {
+                        const payment = getPaymentForStudentAndActivity(std.ID, act.ID);
+                        const exemption = getExemptionForStudentAndActivity(std.ID, act.ID);
+                        
+                        return (
+                          <td key={act.ID} className="p-4 text-center border-r">
+                            {exemption ? (
+                              <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-bold" title={exemption.Reason}>
+                                <UserMinus size={14} /> No participa
+                              </span>
+                            ) : payment ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
+                                  <Check size={14} /> Pagó
+                                </span>
+                                <button 
+                                  onClick={() => setSelectedImage(payment.ImageBase64)}
+                                  className="text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 px-2 py-1 rounded"
+                                >
+                                  <ImageIcon size={12} /> Ver
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
+                                <X size={14} /> Falta
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  {students.length === 0 && (
+                    <tr>
+                      <td colSpan={activities.length + 1} className="p-8 text-center text-gray-500">
+                        No hay alumnos registrados. Ve a la pestaña "Alumnos".
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Actividades Tab */}
+        {activeTab === 'actividades' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Plus size={20} className="text-indigo-600" /> Nueva Actividad
+              </h3>
+              <form onSubmit={handleAddActivity} className="flex flex-col sm:flex-row gap-4">
+                <input 
+                  type="text" placeholder="Nombre (ej. Cuota Pro-fondos)" required
+                  value={newActivityName} onChange={e => setNewActivityName(e.target.value)}
+                  className="flex-1 border rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+                <input 
+                  type="number" placeholder="Monto (S/)" required step="0.10"
+                  value={newActivityAmount} onChange={e => setNewActivityAmount(e.target.value)}
+                  className="w-32 border rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+                <button 
+                  type="submit" disabled={isSubmitting}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-lg transition disabled:opacity-70 whitespace-nowrap"
+                >
+                  {isSubmitting ? 'Guardando...' : 'Crear'}
+                </button>
+              </form>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
+              <ul className="divide-y">
+                {activities.map(act => (
+                  <li key={act.ID} className="p-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 transition gap-4">
+                    <div>
+                      <h4 className="font-bold text-gray-900">{act.Name}</h4>
+                      <p className="text-sm text-gray-500">Monto: S/ {act.Amount}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button 
+                        onClick={() => { setSelectedActForExemption(act); setShowExemptionModal(true); }}
+                        className="flex items-center gap-2 text-sm bg-orange-50 hover:bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-medium transition"
+                      >
+                        <UserMinus size={16} /> Exonerados
+                      </button>
+                      <button 
+                        onClick={() => exportExcelPDF(act.ID, act.Name, act.Amount)}
+                        className="flex items-center gap-2 text-sm bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 rounded-lg font-medium transition"
+                      >
+                        <FileSpreadsheet size={16} /> Resumen Excel
+                      </button>
+                      <button 
+                        onClick={() => exportImage(act.ID, act.Name)}
+                        className="flex items-center gap-2 text-sm bg-cyan-50 hover:bg-cyan-100 text-cyan-700 px-3 py-2 rounded-lg font-medium transition"
+                      >
+                        <ImageLucide size={16} /> Imagen PNG
+                      </button>
+                      <button 
+                        onClick={() => shareToWhatsApp(act.ID, act.Name)}
+                        className="flex items-center gap-2 text-sm bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-2 rounded-lg font-medium transition shadow-sm"
+                      >
+                        <MessageCircle size={16} /> WhatsApp
+                      </button>
+                      <button 
+                        onClick={() => exportPDF(act.ID, act.Name)}
+                        className="flex items-center gap-2 text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg font-medium transition"
+                      >
+                        <Download size={16} /> Reporte (Imágenes)
+                      </button>
+                      <button 
+                        onClick={() => copyLink(act.ID)}
+                        className="flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg font-medium transition"
+                      >
+                        <ClipboardCopy size={16} /> Copiar Enlace
+                      </button>
+                    </div>
+                  </li>
+                ))}
+                {activities.length === 0 && (
+                  <li className="p-8 text-center text-gray-500">No hay actividades creadas.</li>
+                )}
+              </ul>
+            </div>
+            
+            {/* Hidden Templates for Image Generation */}
+            <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
+              {activities.map(act => (
+                <ExcelReportTemplate 
+                  key={`tpl-${act.ID}`}
+                  id={`excel-report-${act.ID}`}
+                  activity={act}
+                  students={students}
+                  payments={payments}
+                  exemptions={exemptions}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Alumnos Tab */}
+        {activeTab === 'alumnos' && (
+          <div className="max-w-3xl space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <Users size={20} className="text-indigo-600" /> Carga Masiva de Alumnos
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">Pega una lista de nombres, uno por línea.</p>
+              
+              <textarea 
+                rows={10} 
+                placeholder="Juan Perez&#10;Maria Lopez&#10;Carlos Sanchez"
+                value={studentListText}
+                onChange={e => setStudentListText(e.target.value)}
+                className="w-full border rounded-xl p-4 bg-gray-50 focus:ring-2 focus:ring-indigo-500 outline-none resize-none font-mono text-sm mb-4"
+              />
+              <button 
+                onClick={handleAddStudents} 
+                disabled={isSubmitting || !studentListText.trim()}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-4 rounded-xl transition disabled:opacity-70"
+              >
+                {isSubmitting ? 'Guardando...' : 'Guardar Lista'}
+              </button>
+            </div>
+            
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <h4 className="font-bold text-gray-900 mb-4">Total: {students.length} alumnos registrados</h4>
+              <div className="flex flex-wrap gap-2">
+                {students.map(s => (
+                  <span key={s.ID} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium border">
+                    {s.Name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Modals */}
+      <ImageModal base64Image={selectedImage} onClose={() => setSelectedImage(null)} />
+
+      {/* Exemption Modal */}
+      {showExemptionModal && selectedActForExemption && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">Marcar No Participa</h3>
+              <button onClick={() => setShowExemptionModal(false)} className="text-gray-500 hover:text-gray-800">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Actividad: <span className="font-semibold">{selectedActForExemption.Name}</span>
+            </p>
+            
+            <form onSubmit={handleAddExemption} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Alumno</label>
+                <select 
+                  required
+                  value={exemptionStudentId} 
+                  onChange={e => setExemptionStudentId(e.target.value)}
+                  className="w-full border rounded-lg p-2 bg-gray-50 focus:ring-2 focus:ring-indigo-500 outline-none"
+                >
+                  <option value="">Seleccionar alumno...</option>
+                  {students.map(s => {
+                    const isExempt = getExemptionForStudentAndActivity(s.ID, selectedActForExemption.ID);
+                    if (isExempt) return null; // already exempt
+                    return <option key={s.ID} value={s.ID}>{s.Name}</option>;
+                  })}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Motivo (Opcional)</label>
+                <input 
+                  type="text" 
+                  maxLength={50}
+                  value={exemptionReason}
+                  onChange={e => setExemptionReason(e.target.value)}
+                  placeholder="Ej. Retirado, Exonerado por dirección..."
+                  className="w-full border rounded-lg p-2 bg-gray-50 focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <button 
+                type="submit" disabled={isSubmitting || !exemptionStudentId}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold p-3 rounded-lg transition disabled:opacity-70"
+              >
+                {isSubmitting ? 'Guardando...' : 'Guardar Exoneración'}
+              </button>
+            </form>
+
+            <div className="mt-6 pt-4 border-t">
+              <h4 className="text-sm font-bold text-gray-700 mb-2">Exonerados actuales:</h4>
+              <ul className="space-y-2 max-h-40 overflow-y-auto">
+                {exemptions.filter(e => e.ActivityID === selectedActForExemption.ID).map(ex => {
+                  const s = students.find(st => st.ID === ex.StudentID);
+                  return (
+                    <li key={ex.ID} className="text-xs bg-gray-100 p-2 rounded flex justify-between">
+                      <span className="font-medium">{s?.Name || 'Desconocido'}</span>
+                      <span className="text-gray-500">{ex.Reason || 'Sin motivo'}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
