@@ -10,6 +10,9 @@ import { Loader2 } from 'lucide-react';
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTqqbD5BLwe3eNmmXTMVgrHU5GpvlwLJG0pEPeVKo9abPc5QJAeGsRhw9nwESvLm-wkg/exec";
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('app_auth') === 'true');
+  const [userRole, setUserRole] = useState(() => localStorage.getItem('app_role') || '');
+
   const [view, setViewState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     let initialView = params.get('view');
@@ -59,8 +62,6 @@ function App() {
 
   const [globalData, setGlobalData] = useState({ activities: [], students: [], payments: [], exemptions: [] });
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('app_auth') === 'true');
-  const [userRole, setUserRole] = useState(() => localStorage.getItem('app_role') || '');
 
   useEffect(() => {
     localStorage.setItem('app_view', view);
