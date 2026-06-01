@@ -224,6 +224,11 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                     placeholder="****" 
                     value={enteredPassword}
                     onChange={(e) => {setEnteredPassword(e.target.value.toUpperCase()); setPasswordError(false);}}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && selectedStudent && enteredPassword.length === 4) {
+                        handleVerifyPassword();
+                      }
+                    }}
                     maxLength={4}
                     className={`w-full text-center text-xl border rounded-lg p-3 uppercase font-mono tracking-widest bg-gray-50 outline-none transition focus:ring-2 ${passwordError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
                   />
