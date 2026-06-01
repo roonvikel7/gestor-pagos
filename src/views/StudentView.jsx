@@ -263,16 +263,16 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
   // --- STUDENT DASHBOARD SCREEN ---
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex flex-col items-center pt-8">
-      <div className="w-full max-w-lg flex justify-between items-center mb-6">
+      <div className="w-full max-w-lg flex justify-between items-center mb-6 gap-3">
         <button 
           onClick={() => { setIsAuthenticated(false); setEnteredPassword(''); localStorage.removeItem('app_student_auth'); setView('home'); }}
-          className="flex items-center text-red-500 hover:text-red-700 font-bold transition bg-red-50 px-3 py-2 rounded-lg"
+          className="flex-shrink-0 flex items-center text-red-600 hover:text-red-700 font-bold transition bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-sm border border-red-100 shadow-sm"
         >
-          <X size={20} className="mr-2" /> Cerrar Sesión
+          <LogOut size={16} className="mr-1.5" /> Salir
         </button>
-        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-          <User size={20} className="text-blue-600" />
-          {students.find(s => s.ID === selectedStudent)?.Name}
+        <h2 className="text-sm sm:text-lg font-bold text-gray-900 flex items-center gap-2 text-right leading-tight">
+          <User size={18} className="text-blue-600 flex-shrink-0 hidden sm:block" />
+          <span className="line-clamp-2">{students.find(s => s.ID === selectedStudent)?.Name}</span>
         </h2>
       </div>
 
