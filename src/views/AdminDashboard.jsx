@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut, Cake } from 'lucide-react';
+import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut, Cake, Trash2 } from 'lucide-react';
 import ImageModal from '../components/ImageModal';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -88,6 +88,12 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
 
+  // Delete Activity State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState(null);
+  const [deleteAdminPassword, setDeleteAdminPassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+
   const activities = globalData?.activities || [];
   const students = globalData?.students || [];
   const payments = globalData?.payments || [];
@@ -126,6 +132,39 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       }
     } catch(err) {
       setMsg({ type: 'error', text: 'Error de red al crear actividad' });
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleDeleteActivity = async (e) => {
+    e.preventDefault();
+    if (deleteAdminPassword !== '9999') {
+      setDeleteError('Contraseña incorrecta');
+      return;
+    }
+    setDeleteError('');
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'deleteActivity',
+          activityId: activityToDelete.ID
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        setShowDeleteModal(false);
+        setActivityToDelete(null);
+        setDeleteAdminPassword('');
+        setMsg({ type: 'success', text: `Actividad eliminada` });
+        fetchGlobalData();
+      } else {
+        setDeleteError('Error: ' + data.message);
+      }
+    } catch(err) {
+      setDeleteError('Error de red al eliminar actividad');
     }
     setIsSubmitting(false);
   };
@@ -805,6 +844,14 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                       >
                         <ClipboardCopy size={16} /> Copiar Enlace
                       </button>
+                      {role === 'admin' && (
+                        <button 
+                          onClick={() => { setActivityToDelete(act); setShowDeleteModal(true); setDeleteAdminPassword(''); setDeleteError(''); }}
+                          className="flex items-center gap-2 text-sm bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-lg font-medium transition"
+                        >
+                          <Trash2 size={16} /> Eliminar
+                        </button>
+                      )}
                     </div>
                   </li>
                 ))}
@@ -1000,6 +1047,47 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                   );
                 })}
               </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {showDeleteModal && activityToDelete && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-red-50">
+              <h3 className="text-xl font-bold text-red-800">Eliminar Actividad</h3>
+              <button onClick={() => setShowDeleteModal(false)} className="text-red-500 hover:bg-red-100 p-2 rounded-full transition">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700 mb-4 text-sm">
+                Estás a punto de eliminar la actividad <strong>{activityToDelete.Name}</strong>. Esta acción no se puede deshacer. Por favor, ingresa tu contraseña de administrador para confirmar.
+              </p>
+              <form onSubmit={handleDeleteActivity} className="space-y-4">
+                <div>
+                  <input
+                    type="password"
+                    placeholder="****"
+                    maxLength={4}
+                    value={deleteAdminPassword}
+                    onChange={(e) => { setDeleteAdminPassword(e.target.value); setDeleteError(''); }}
+                    className={`w-full text-center text-2xl tracking-widest border rounded-xl p-3 bg-gray-50 outline-none transition focus:ring-2 ${deleteError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-indigo-500'}`}
+                    autoFocus
+                  />
+                  {deleteError && <p className="text-red-500 text-sm mt-2 font-medium text-center">{deleteError}</p>}
+                </div>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setShowDeleteModal(false)} className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition">
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={isSubmitting || deleteAdminPassword.length !== 4} className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition disabled:opacity-50">
+                    {isSubmitting ? 'Eliminando...' : 'Eliminar'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

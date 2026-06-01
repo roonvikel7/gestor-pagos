@@ -203,6 +203,24 @@ function doPost(e) {
       }
       return createSuccessResponse({ id: data.activityId, status: updatedStatus });
       
+    } else if (action === 'deleteActivity') {
+      sheet = ss.getSheetByName('Activities');
+      const idIdx = getColumnIndex(sheet, 'ID');
+      const values = sheet.getDataRange().getValues();
+      let rowIndex = -1;
+      for (let i = 1; i < values.length; i++) {
+        if (values[i][idIdx] === data.activityId) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+      if (rowIndex !== -1) {
+        sheet.deleteRow(rowIndex);
+        return createSuccessResponse({ deleted: true, activityId: data.activityId });
+      } else {
+        return createErrorResponse('Activity not found');
+      }
+      
     } else {
       return createErrorResponse('Invalid action');
     }
