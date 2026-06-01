@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle, X, User, LogOut } from 'lucide-react';
+import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle, X, User, LogOut, CalendarClock } from 'lucide-react';
 import { compressImage } from '../utils/imageCompression';
 import ImageModal from '../components/ImageModal';
 
@@ -122,9 +122,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
     }
   };
 
-  const getExistingPayment = () => {
-    return globalData?.payments?.find(p => p.StudentID === selectedStudent && p.ActivityID === selectedActivity);
-  };
+
 
   const handleSubmit = async (e) => {
     if(e && e.preventDefault) e.preventDefault();
