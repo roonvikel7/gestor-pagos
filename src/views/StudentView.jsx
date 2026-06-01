@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle, X, User } from 'lucide-react';
+import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle, X, User, LogOut } from 'lucide-react';
 import { compressImage } from '../utils/imageCompression';
 import ImageModal from '../components/ImageModal';
 
