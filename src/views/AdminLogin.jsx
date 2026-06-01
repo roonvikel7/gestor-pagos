@@ -7,7 +7,7 @@ export default function AdminLogin({ setView, onLogin }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (pin === 'tesoreria26') {
+    if (pin === '2627') {
       onLogin();
     } else {
       setError(true);
@@ -31,7 +31,7 @@ export default function AdminLogin({ setView, onLogin }) {
             <Lock size={32} />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Acceso Tesorera</h2>
-          <p className="text-gray-500 mb-6 text-sm">Ingresa la contraseña para continuar</p>
+          <p className="text-gray-500 mb-6 text-sm">Ingresa el PIN para continuar</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -39,11 +39,12 @@ export default function AdminLogin({ setView, onLogin }) {
                 type="password"
                 value={pin}
                 onChange={(e) => { setPin(e.target.value); setError(false); }}
-                placeholder="Contraseña"
-                className={`w-full text-center text-lg border rounded-xl p-4 bg-gray-50 outline-none transition focus:ring-2 ${error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-indigo-500'}`}
+                placeholder="****"
+                className={`w-full text-center text-2xl tracking-widest border rounded-xl p-4 bg-gray-50 outline-none transition focus:ring-2 ${error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-indigo-500'}`}
+                maxLength={4}
                 autoFocus
               />
-              {error && <p className="text-red-500 text-sm mt-2 font-medium">Contraseña incorrecta</p>}
+              {error && <p className="text-red-500 text-sm mt-2 font-medium">PIN incorrecto</p>}
             </div>
 
             <button
