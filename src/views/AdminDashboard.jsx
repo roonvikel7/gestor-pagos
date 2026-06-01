@@ -7,7 +7,30 @@ import * as htmlToImage from 'html-to-image';
 import ExcelReportTemplate from '../components/ExcelReportTemplate';
 
 export default function AdminDashboard({ setView, globalData, fetchGlobalData, scriptUrl, onLogout }) {
-  const [activeTab, setActiveTab] = useState('pagos');
+  const [activeTab, setActiveTabState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'pagos';
+  });
+
+  const setActiveTab = (newTab) => {
+    if (newTab === activeTab) return;
+    setActiveTabState(newTab);
+    const url = new URL(window.location);
+    url.searchParams.set('view', 'admin-dashboard');
+    url.searchParams.set('tab', newTab);
+    window.history.pushState({}, '', url);
+  };
+
+  React.useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('tab') || 'pagos';
+      setActiveTabState(t);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Modals

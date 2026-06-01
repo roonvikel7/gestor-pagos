@@ -10,7 +10,34 @@ import { Loader2 } from 'lucide-react';
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTqqbD5BLwe3eNmmXTMVgrHU5GpvlwLJG0pEPeVKo9abPc5QJAeGsRhw9nwESvLm-wkg/exec";
 
 function App() {
-  const [view, setView] = useState(() => localStorage.getItem('app_view') || 'home');
+  const [view, setViewState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    let initialView = params.get('view');
+    if (params.get('actividad')) initialView = 'student';
+    if (!initialView) initialView = localStorage.getItem('app_view') || 'home';
+    return initialView;
+  });
+
+  const setView = (newView) => {
+    if (newView === view) return;
+    setViewState(newView);
+    const url = new URL(window.location);
+    url.searchParams.set('view', newView);
+    window.history.pushState({}, '', url);
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      let poppedView = params.get('view');
+      if (params.get('actividad')) poppedView = 'student';
+      if (!poppedView) poppedView = 'home';
+      setViewState(poppedView);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const [globalData, setGlobalData] = useState({ activities: [], students: [], payments: [], exemptions: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('app_auth') === 'true');
@@ -31,14 +58,6 @@ function App() {
       setView(newView);
     }
   };
-
-  // Inicialmente ver si hay un parámetro 'actividad'
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('actividad')) {
-      handleSetView('student');
-    }
-  }, []);
 
   const fetchGlobalData = async () => {
     try {
