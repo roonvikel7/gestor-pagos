@@ -264,15 +264,6 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     try {
       const doc = new jsPDF();
       
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(24);
-      doc.setTextColor(26, 99, 106);
-      doc.text("REPORTE DE PAGOS", 105, 20, { align: 'center', charSpace: 2 });
-      
-      doc.setFontSize(16);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`"${actName.toUpperCase()}"`, 105, 30, { align: 'center' });
-      
       const tableData = students.sort((a,b)=>(a.Name||'').localeCompare(b.Name||'')).map(std => {
         const payment = getPaymentForStudentAndActivity(std.ID, actId);
         const exemption = getExemptionForStudentAndActivity(std.ID, actId);
@@ -301,67 +292,88 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
         ];
       });
       
-      autoTable(doc, {
-        startY: 40,
-        head: [['Estudiante', 'Estado', 'Fecha y hora\nde envío', 'Comprobante']],
-        body: tableData.map(row => [row[0], row[1], row[2], '']),
-        theme: 'grid',
-        styles: { 
-          halign: 'center', 
-          valign: 'middle', 
-          lineColor: [26, 99, 106],
-          lineWidth: 0.5,
-          textColor: [0, 0, 0],
-          fontSize: 12,
-          fontStyle: 'normal'
-        },
-        headStyles: { 
-          fillColor: [26, 99, 106],
-          textColor: [255, 255, 255],
-          fontSize: 12,
-          fontStyle: 'bold'
-        },
-        columnStyles: {
-          0: { cellWidth: 50, fillColor: [223, 234, 235], fontStyle: 'bold' },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 40 },
-          3: { cellWidth: 65 }
-        },
-        bodyStyles: { minCellHeight: 75 },
-        willDrawCell: function(data) {
-          if (data.section === 'body' && data.column.index === 1) {
-            const estado = data.cell.raw;
-            if (estado === 'Pagó') {
-              data.cell.styles.fillColor = [182, 220, 163];
-            } else if (estado === 'Falta') {
-              data.cell.styles.fillColor = [244, 184, 168];
-            } else if (estado === 'Exonerado') {
-              data.cell.styles.fillColor = [226, 232, 240];
+      const chunkSize = 3;
+      const chunks = [];
+      for (let i = 0; i < tableData.length; i += chunkSize) {
+        chunks.push(tableData.slice(i, i + chunkSize));
+      }
+
+      chunks.forEach((chunk, index) => {
+        if (index > 0) {
+          doc.addPage();
+        }
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(24);
+        doc.setTextColor(26, 99, 106);
+        doc.text("REPORTE DE PAGOS", 105, 20, { align: 'center', charSpace: 2 });
+        
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`"${actName.toUpperCase()}"`, 105, 30, { align: 'center' });
+        
+        autoTable(doc, {
+          startY: 40,
+          head: [['Estudiante', 'Estado', 'Fecha y hora\nde envío', 'Comprobante']],
+          body: chunk.map(row => [row[0], row[1], row[2], '']),
+          theme: 'grid',
+          styles: { 
+            halign: 'center', 
+            valign: 'middle', 
+            lineColor: [26, 99, 106],
+            lineWidth: 0.5,
+            textColor: [0, 0, 0],
+            fontSize: 12,
+            fontStyle: 'normal'
+          },
+          headStyles: { 
+            fillColor: [26, 99, 106],
+            textColor: [255, 255, 255],
+            fontSize: 12,
+            fontStyle: 'bold'
+          },
+          columnStyles: {
+            0: { cellWidth: 50, fillColor: [223, 234, 235], fontStyle: 'bold' },
+            1: { cellWidth: 35 },
+            2: { cellWidth: 40 },
+            3: { cellWidth: 65 }
+          },
+          bodyStyles: { minCellHeight: 75 },
+          willDrawCell: function(data) {
+            if (data.section === 'body' && data.column.index === 1) {
+              const estado = data.cell.raw;
+              if (estado === 'Pagó') {
+                data.cell.styles.fillColor = [182, 220, 163];
+              } else if (estado === 'Falta') {
+                data.cell.styles.fillColor = [244, 184, 168];
+              } else if (estado === 'Exonerado') {
+                data.cell.styles.fillColor = [226, 232, 240];
+              }
             }
-          }
-        },
-        didDrawCell: function(data) {
-          if (data.column.index === 3 && data.section === 'body') {
-            const studentName = data.row.raw[0];
-            const rowData = tableData.find(r => r[0] === studentName);
-            const base64Img = rowData ? rowData[3] : null;
-            
-            if (base64Img) {
-              const dimX = 35;
-              const dimY = 70;
-              const x = data.cell.x + (data.cell.width - dimX) / 2;
-              const y = data.cell.y + (data.cell.height - dimY) / 2;
-              try {
-                let format = 'JPEG';
-                if (base64Img.startsWith('data:image/png')) format = 'PNG';
-                else if (base64Img.startsWith('data:image/webp')) format = 'WEBP';
-                doc.addImage(base64Img, format, x, y, dimX, dimY);
-              } catch(e) {
-                console.error('Error al dibujar imagen', e);
+          },
+          didDrawCell: function(data) {
+            if (data.column.index === 3 && data.section === 'body') {
+              const studentName = data.row.raw[0];
+              const rowData = tableData.find(r => r[0] === studentName);
+              const base64Img = rowData ? rowData[3] : null;
+              
+              if (base64Img) {
+                const dimX = 35;
+                const dimY = 70;
+                const x = data.cell.x + (data.cell.width - dimX) / 2;
+                const y = data.cell.y + (data.cell.height - dimY) / 2;
+                try {
+                  let format = 'JPEG';
+                  if (base64Img.startsWith('data:image/png')) format = 'PNG';
+                  else if (base64Img.startsWith('data:image/webp')) format = 'WEBP';
+                  doc.addImage(base64Img, format, x, y, dimX, dimY);
+                } catch(e) {
+                  console.error('Error al dibujar imagen', e);
+                }
               }
             }
           }
-        }
+        });
       });
       
       doc.save(`Reporte_Img_${actName.replace(/\s+/g, '_')}.pdf`);
