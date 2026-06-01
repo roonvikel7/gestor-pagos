@@ -441,12 +441,12 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
         {activeTab === 'pagos' && (
           <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
+              <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50 text-gray-600 font-semibold border-b">
                   <tr>
-                    <th className="p-4 sticky left-0 bg-gray-50 z-10 border-r shadow-[1px_0_0_0_#e5e7eb]">Alumno</th>
+                    <th className="p-3 sm:p-4 sticky left-0 bg-gray-50 z-10 border-r shadow-[1px_0_0_0_#e5e7eb] min-w-[120px] max-w-[140px] whitespace-normal">Alumno</th>
                     {activities.map(act => (
-                      <th key={act.ID} className="p-4 text-center border-r min-w-[120px]">
+                      <th key={act.ID} className="p-3 sm:p-4 text-center border-r min-w-[100px] max-w-[140px] whitespace-normal">
                         {act.Name} <br/><span className="text-xs font-normal text-gray-400">S/ {act.Amount}</span>
                       </th>
                     ))}
@@ -455,7 +455,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                 <tbody className="divide-y">
                   {students.sort((a,b)=>a.Name.localeCompare(b.Name)).map(std => (
                     <tr key={std.ID} className="hover:bg-gray-50 transition">
-                      <td className="p-4 sticky left-0 bg-white z-10 border-r shadow-[1px_0_0_0_#e5e7eb] font-medium text-gray-900 truncate max-w-[150px]">
+                      <td className="p-3 sm:p-4 sticky left-0 bg-white z-10 border-r shadow-[1px_0_0_0_#e5e7eb] font-medium text-gray-900 min-w-[120px] max-w-[160px] whitespace-normal leading-tight text-xs sm:text-sm">
                         {std.Name}
                       </td>
                       {activities.map(act => {
@@ -463,7 +463,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                         const exemption = getExemptionForStudentAndActivity(std.ID, act.ID);
                         
                         return (
-                          <td key={act.ID} className="p-4 text-center border-r">
+                          <td key={act.ID} className="p-3 sm:p-4 text-center border-r whitespace-nowrap">
                             {exemption ? (
                               <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-bold" title={exemption.Reason}>
                                 <UserMinus size={14} /> No participa
