@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play } from 'lucide-react';
+import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut } from 'lucide-react';
 import ImageModal from '../components/ImageModal';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as htmlToImage from 'html-to-image';
 import ExcelReportTemplate from '../components/ExcelReportTemplate';
 
-export default function AdminDashboard({ setView, globalData, fetchGlobalData, scriptUrl }) {
+export default function AdminDashboard({ setView, globalData, fetchGlobalData, scriptUrl, onLogout }) {
   const [activeTab, setActiveTab] = useState('pagos');
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -431,12 +431,22 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
           </button>
           <h1 className="text-xl font-bold text-gray-900">Panel Tesorera</h1>
         </div>
-        <button 
-          onClick={handleRefresh} 
-          className={`p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition ${isRefreshing ? 'animate-spin' : ''}`}
-        >
-          <RefreshCw size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={handleRefresh} 
+            className={`p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition ${isRefreshing ? 'animate-spin' : ''}`}
+            title="Actualizar Datos"
+          >
+            <RefreshCw size={20} />
+          </button>
+          <button 
+            onClick={onLogout} 
+            className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition flex items-center justify-center"
+            title="Cerrar Sesión"
+          >
+            <LogOut size={20} />
+          </button>
+        </div>
       </header>
 
       {/* Tabs */}

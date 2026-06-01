@@ -69,6 +69,11 @@ function App() {
     setView('admin-dashboard');
   };
 
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setView('home');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -96,7 +101,7 @@ function App() {
       {view === 'admin-login' && <AdminLogin setView={handleSetView} onLogin={handleAdminLogin} />}
       {view === 'admin-dashboard' && (
         isAuthenticated ? (
-          <AdminDashboard setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} />
+          <AdminDashboard setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} onLogout={handleLogout} />
         ) : (
           <Home setView={handleSetView} />
         )
