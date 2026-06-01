@@ -10,7 +10,7 @@ export default function ExcelReportTemplate({ id, activity, students, payments, 
   let totalFaltante = 0;
   let totalGeneral = 0;
 
-  const rows = students.slice().sort((a,b)=>a.Name.localeCompare(b.Name)).map((std, index) => {
+  const rows = students.slice().sort((a,b)=>(a.Name||'').localeCompare(b.Name||'')).map((std, index) => {
     const payment = getPayment(std.ID);
     const exemption = getExemption(std.ID);
     let pago = '';

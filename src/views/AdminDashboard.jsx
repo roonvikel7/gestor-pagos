@@ -30,10 +30,13 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     }
   }, [role, activeTab]);
 
+  const [selectedImage, setSelectedImage] = useState(null);
+
   React.useEffect(() => {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
-      const t = params.get('tab') || 'pagos';
+      let t = params.get('tab');
+      if (!t || !tabs.includes(t)) t = tabs[0];
       setActiveTabState(t);
       if (params.get('modal') !== 'image') {
         setSelectedImage(null);
@@ -55,8 +58,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     }
   }, [role]);
   
-  // Modals
-  const [selectedImage, setSelectedImage] = useState(null);
+  // Modals (moved up)
 
   const openImageModal = (image) => {
     setSelectedImage(image);
@@ -265,7 +267,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       doc.setFontSize(16);
       doc.text(`Reporte de Pagos: ${actName}`, 14, 20);
       
-      const tableData = students.sort((a,b)=>a.Name.localeCompare(b.Name)).map(std => {
+      const tableData = students.sort((a,b)=>(a.Name||'').localeCompare(b.Name||'')).map(std => {
         const payment = getPaymentForStudentAndActivity(std.ID, actId);
         const exemption = getExemptionForStudentAndActivity(std.ID, actId);
         
@@ -348,7 +350,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       let totalFaltante = 0;
       let totalExpected = 0;
 
-      const tableData = students.sort((a,b)=>a.Name.localeCompare(b.Name)).map((std, index) => {
+      const tableData = students.sort((a,b)=>(a.Name||'').localeCompare(b.Name||'')).map((std, index) => {
         const payment = getPaymentForStudentAndActivity(std.ID, actId);
         const exemption = getExemptionForStudentAndActivity(std.ID, actId);
         
@@ -593,7 +595,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {students.sort((a,b)=>a.Name.localeCompare(b.Name)).map(std => (
+                  {students.sort((a,b)=>(a.Name||'').localeCompare(b.Name||'')).map(std => (
                     <tr key={std.ID} className="hover:bg-gray-50 transition">
                       <td className="p-3 sm:p-4 sticky left-0 bg-white z-10 border-r shadow-[1px_0_0_0_#e5e7eb] font-medium text-gray-900 min-w-[120px] max-w-[160px] whitespace-normal leading-tight text-xs sm:text-sm">
                         {std.Name}
@@ -784,7 +786,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                   className="flex-1 border rounded-xl p-3 bg-gray-50 outline-none w-full"
                 >
                   <option value="">Selecciona al alumno...</option>
-                  {students.sort((a,b)=>a.Name.localeCompare(b.Name)).map(s => (
+                  {students.sort((a,b)=>(a.Name||'').localeCompare(b.Name||'')).map(s => (
                     <option key={s.ID} value={s.Name}>{s.Name}</option>
                   ))}
                 </select>
@@ -834,7 +836,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {students.sort((a,b)=>a.Name.localeCompare(b.Name)).map(s => (
+                    {students.sort((a,b)=>(a.Name||'').localeCompare(b.Name||'')).map(s => (
                       <tr key={s.ID} className="hover:bg-gray-50">
                         <td className="p-3 border-r font-medium text-gray-900">{s.Name}</td>
                         <td className="p-3 text-center">
