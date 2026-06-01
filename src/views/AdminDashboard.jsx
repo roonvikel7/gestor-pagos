@@ -44,6 +44,16 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
   }, []);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [treasurerName, setTreasurerName] = useState(() => localStorage.getItem('app_treasurer_name') || '');
+  const [treasurerGender, setTreasurerGender] = useState(() => localStorage.getItem('app_treasurer_gender') || 'a');
+
+  React.useEffect(() => {
+    if (role === 'tesorera') {
+      const timer = setTimeout(() => setShowWelcome(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [role]);
   
   // Modals
   const [selectedImage, setSelectedImage] = useState(null);
@@ -518,7 +528,9 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
           <button onClick={() => setView('home')} className="text-gray-500 hover:text-gray-900 transition">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Panel Tesorera</h1>
+          <h1 className="text-xl font-bold text-gray-900">
+            {role === 'admin' ? 'Panel Administrador' : 'Panel Tesorera'}
+          </h1>
         </div>
         <div className="flex items-center gap-2">
           <button 
@@ -539,7 +551,13 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       </header>
 
       {/* Tabs */}
-      <div className="bg-white border-b px-6 flex space-x-6 overflow-x-auto">
+      <div className="bg-white border-b px-6 flex space-x-6 overflow-x-auto relative">
+        {/* Floating Welcome */}
+        {showWelcome && role === 'tesorera' && treasurerName && (
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-4 bg-indigo-600 text-white px-6 py-3 rounded-full shadow-2xl z-50 animate-bounce text-sm sm:text-base font-bold whitespace-nowrap">
+            ¡Bienvenid{treasurerGender} Tesorer{treasurerGender} {treasurerName}!
+          </div>
+        )}
         {tabs.map(tab => (
           <button
             key={tab}
@@ -740,6 +758,39 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
         {/* Alumnos Tab (Only Admin) */}
         {activeTab === 'alumnos' && role === 'admin' && (
           <div className="max-w-3xl space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <Users size={20} className="text-indigo-600" /> Configurar Tesorera(o)
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">Selecciona el nombre y género para la bienvenida de la tesorería.</p>
+              <div className="flex flex-col sm:flex-row gap-4 items-center">
+                <select 
+                  value={treasurerGender}
+                  onChange={(e) => {
+                    setTreasurerGender(e.target.value);
+                    localStorage.setItem('app_treasurer_gender', e.target.value);
+                  }}
+                  className="border rounded-xl p-3 bg-gray-50 outline-none w-full sm:w-auto"
+                >
+                  <option value="a">Tesorera</option>
+                  <option value="o">Tesorero</option>
+                </select>
+                <select 
+                  value={treasurerName}
+                  onChange={(e) => {
+                    setTreasurerName(e.target.value);
+                    localStorage.setItem('app_treasurer_name', e.target.value);
+                  }}
+                  className="flex-1 border rounded-xl p-3 bg-gray-50 outline-none w-full"
+                >
+                  <option value="">Selecciona al alumno...</option>
+                  {students.sort((a,b)=>a.Name.localeCompare(b.Name)).map(s => (
+                    <option key={s.ID} value={s.Name}>{s.Name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="bg-white rounded-2xl shadow-sm border p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <Users size={20} className="text-indigo-600" /> Carga Masiva de Alumnos

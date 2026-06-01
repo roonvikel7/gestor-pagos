@@ -30,13 +30,32 @@ function App() {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       let poppedView = params.get('view');
+      
+      const isStudentAuth = localStorage.getItem('app_student_auth') === 'true';
+
+      if (isAuthenticated && poppedView !== 'admin-dashboard') {
+         const url = new URL(window.location);
+         url.searchParams.set('view', 'admin-dashboard');
+         window.history.pushState({}, '', url);
+         setViewState('admin-dashboard');
+         return;
+      }
+
+      if (isStudentAuth && poppedView !== 'student') {
+         const url = new URL(window.location);
+         url.searchParams.set('view', 'student');
+         window.history.pushState({}, '', url);
+         setViewState('student');
+         return;
+      }
+
       if (params.get('actividad')) poppedView = 'student';
       if (!poppedView) poppedView = 'home';
       setViewState(poppedView);
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [isAuthenticated]);
 
   const [globalData, setGlobalData] = useState({ activities: [], students: [], payments: [], exemptions: [] });
   const [isLoading, setIsLoading] = useState(true);

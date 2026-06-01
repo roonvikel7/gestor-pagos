@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle, X, User } from 'lucide-react';
 import { compressImage } from '../utils/imageCompression';
+import ImageModal from '../components/ImageModal';
 
 export default function StudentView({ setView, globalData, fetchGlobalData, scriptUrl }) {
   const [activities, setActivities] = useState([]);
@@ -18,7 +19,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
   // Editing & Auth states
   const [enteredPassword, setEnteredPassword] = useState('');
   const [passwordError, setPasswordError] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('app_student_auth') === 'true');
   const [isEditing, setIsEditing] = useState(false);
   
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -109,6 +110,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
     if (studentObj && studentObj.Password && studentObj.Password.toUpperCase() === enteredPassword) {
       setIsAuthenticated(true);
       setPasswordError(false);
+      localStorage.setItem('app_student_auth', 'true');
     } else {
       setPasswordError(true);
     }
@@ -258,7 +260,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex flex-col items-center pt-8">
       <div className="w-full max-w-lg flex justify-between items-center mb-6">
         <button 
-          onClick={() => { setIsAuthenticated(false); setEnteredPassword(''); }}
+          onClick={() => { setIsAuthenticated(false); setEnteredPassword(''); localStorage.removeItem('app_student_auth'); setView('home'); }}
           className="flex items-center text-gray-500 hover:text-gray-900 transition"
         >
           <ArrowLeft size={20} className="mr-2" /> Salir
@@ -405,24 +407,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
       </div>
 
       {isImageModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-          onClick={closeImageModal}
-        >
-          <div className="relative max-w-4xl w-full h-full flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="absolute top-4 right-4 text-white bg-black/50 hover:bg-black/80 rounded-full p-2 transition z-10"
-              onClick={closeImageModal}
-            >
-              <X size={24} />
-            </button>
-            <img 
-              src={getExistingPayment()?.ImageBase64} 
-              alt="Comprobante en grande" 
-              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-            />
-          </div>
-        </div>
+        <ImageModal base64Image={getExistingPayment()?.ImageBase64} onClose={closeImageModal} />
       )}
     </div>
   );
