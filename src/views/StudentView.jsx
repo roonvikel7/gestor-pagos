@@ -128,7 +128,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
               disabled={new URLSearchParams(window.location.search).get('actividad') !== null}
             >
               <option value="">Selecciona una actividad...</option>
-              {activities.map(act => (
+              {activities.filter(act => act.Status !== 'paused').map(act => (
                 <option key={act.ID} value={act.ID}>{act.Name} - S/ {act.Amount}</option>
               ))}
             </select>

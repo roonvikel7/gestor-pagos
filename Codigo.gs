@@ -119,6 +119,30 @@ function doPost(e) {
       sheet.appendRow([id, data.activityId, data.studentId, data.reason, new Date()]);
       return createSuccessResponse({ id: id, activityId: data.activityId, studentId: data.studentId });
       
+    } else if (action === 'toggleActivityStatus') {
+      sheet = ss.getSheetByName('Activities');
+      const dataRange = sheet.getDataRange();
+      const values = dataRange.getValues();
+      const idIndex = values[0].indexOf('ID');
+      let statusIndex = values[0].indexOf('Status');
+      
+      // If Status column doesn't exist, create it dynamically
+      if (statusIndex === -1) {
+        statusIndex = values[0].length;
+        sheet.getRange(1, statusIndex + 1).setValue('Status');
+      }
+      
+      let updatedStatus = 'active';
+      for (let i = 1; i < values.length; i++) {
+        if (values[i][idIndex] === data.activityId) {
+          const currentStatus = values[i][statusIndex];
+          updatedStatus = (currentStatus === 'paused') ? 'active' : 'paused';
+          sheet.getRange(i + 1, statusIndex + 1).setValue(updatedStatus);
+          break;
+        }
+      }
+      return createSuccessResponse({ id: data.activityId, status: updatedStatus });
+      
     } else {
       return createErrorResponse('Invalid action');
     }

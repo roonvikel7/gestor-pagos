@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play } from 'lucide-react';
 import ImageModal from '../components/ImageModal';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -126,6 +126,29 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       }
     } catch(err) {
       alert('Error de red al exonerar alumno');
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleTogglePause = async (actId) => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'toggleActivityStatus',
+          activityId: actId
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        fetchGlobalData();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    } catch(err) {
+      alert('Error de red al pausar actividad');
     }
     setIsSubmitting(false);
   };
@@ -533,12 +556,27 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
             <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
               <ul className="divide-y">
                 {activities.map(act => (
-                  <li key={act.ID} className="p-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 transition gap-4">
+                  <li key={act.ID} className={`p-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 transition gap-4 ${act.Status === 'paused' ? 'opacity-60 bg-gray-100 grayscale-[30%]' : ''}`}>
                     <div>
-                      <h4 className="font-bold text-gray-900">{act.Name}</h4>
+                      <h4 className="font-bold text-gray-900 flex items-center gap-2">
+                        {act.Name}
+                        {act.Status === 'paused' && (
+                          <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full border border-yellow-200 font-bold">
+                            Pausada
+                          </span>
+                        )}
+                      </h4>
                       <p className="text-sm text-gray-500">Monto: S/ {act.Amount}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                      <button 
+                        onClick={() => handleTogglePause(act.ID)}
+                        disabled={isSubmitting}
+                        className="flex items-center gap-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-medium transition disabled:opacity-50"
+                      >
+                        {act.Status === 'paused' ? <Play size={16} /> : <Pause size={16} />}
+                        {act.Status === 'paused' ? 'Reanudar' : 'Pausar'}
+                      </button>
                       <button 
                         onClick={() => { setSelectedActForExemption(act); setShowExemptionModal(true); }}
                         className="flex items-center gap-2 text-sm bg-orange-50 hover:bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-medium transition"
