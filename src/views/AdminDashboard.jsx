@@ -303,17 +303,21 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
           doc.addPage();
         }
         
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(24);
-        doc.setTextColor(26, 99, 106);
-        doc.text("REPORTE DE PAGOS", 105, 20, { align: 'center', charSpace: 2 });
-        
-        doc.setFontSize(16);
-        doc.setTextColor(0, 0, 0);
-        doc.text(`"${actName.toUpperCase()}"`, 105, 30, { align: 'center' });
+        let tableStartY = 20;
+        if (index === 0) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(24);
+          doc.setTextColor(26, 99, 106);
+          doc.text("R E P O R T E   D E   P A G O S", 105, 20, { align: 'center' });
+          
+          doc.setFontSize(16);
+          doc.setTextColor(0, 0, 0);
+          doc.text(`"${actName.toUpperCase()}"`, 105, 30, { align: 'center' });
+          tableStartY = 40;
+        }
         
         autoTable(doc, {
-          startY: 40,
+          startY: tableStartY,
           head: [['Estudiante', 'Estado', 'Fecha y hora\nde envío', 'Comprobante']],
           body: chunk.map(row => [row[0], row[1], row[2], '']),
           theme: 'grid',
@@ -342,12 +346,13 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
           willDrawCell: function(data) {
             if (data.section === 'body' && data.column.index === 1) {
               const estado = data.cell.raw;
+              data.cell.styles.fontStyle = 'bold';
               if (estado === 'Pagó') {
-                data.cell.styles.fillColor = [182, 220, 163];
+                data.cell.styles.textColor = [34, 197, 94]; // Green text
               } else if (estado === 'Falta') {
-                data.cell.styles.fillColor = [244, 184, 168];
+                data.cell.styles.textColor = [239, 68, 68]; // Red text
               } else if (estado === 'Exonerado') {
-                data.cell.styles.fillColor = [226, 232, 240];
+                data.cell.styles.textColor = [107, 114, 128]; // Gray text
               }
             }
           },
