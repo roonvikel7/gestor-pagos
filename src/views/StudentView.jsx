@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle } from 'lucide-react';
 import { compressImage } from '../utils/imageCompression';
 
 export default function StudentView({ setView, globalData, fetchGlobalData, scriptUrl }) {
@@ -14,6 +14,12 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  // Editing states
+  const [enteredPassword, setEnteredPassword] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -50,8 +56,22 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
     }
   };
 
+  const handleVerifyPassword = () => {
+    const studentObj = students.find(s => s.ID === selectedStudent);
+    if (studentObj && studentObj.Password && studentObj.Password.toUpperCase() === enteredPassword) {
+      setIsAuthenticated(true);
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
+
+  const getExistingPayment = () => {
+    return globalData?.payments?.find(p => p.StudentID === selectedStudent && p.ActivityID === selectedActivity);
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if(e && e.preventDefault) e.preventDefault();
     if (!selectedActivity || !selectedStudent || !imageFile) {
       setError('Por favor completa todos los campos.');
       return;
@@ -83,7 +103,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
       }
     } catch (err) {
       console.error(err);
-      setError('Ocurrió un error al enviar el comprobante. Revisa tu conexión.');
+      setError('Ocurrió un error: ' + (err.message || 'Revisa tu conexión.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -168,7 +188,78 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
             <div className="bg-green-50 border border-green-200 p-6 rounded-xl text-center shadow-sm">
               <CheckCircle2 size={40} className="text-green-500 mx-auto mb-3" />
               <h3 className="font-bold text-green-800 text-lg">¡Pago Registrado!</h3>
-              <p className="text-sm text-green-700 mt-1">El sistema ya tiene tu comprobante guardado para esta actividad. ¡Muchas gracias!</p>
+              <p className="text-sm text-green-700 mt-1 mb-4">El sistema ya tiene tu comprobante guardado para esta actividad. ¡Muchas gracias!</p>
+              
+              {!isAuthenticated ? (
+                <div className="mt-4 border-t border-green-200 pt-4">
+                  <p className="text-sm font-medium text-green-800 mb-3">¿Deseas visualizar o editar tu pago?</p>
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <input 
+                        type="password" 
+                        placeholder="Contraseña (4 letras)" 
+                        value={enteredPassword}
+                        onChange={(e) => {setEnteredPassword(e.target.value.toUpperCase()); setPasswordError(false);}}
+                        maxLength={4}
+                        className={`w-full text-center border rounded-lg p-3 uppercase font-mono tracking-widest outline-none focus:ring-2 ${passwordError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'}`}
+                      />
+                      {passwordError && <p className="text-red-500 text-xs mt-1 font-medium">Contraseña incorrecta</p>}
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={handleVerifyPassword}
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition"
+                    >
+                      Visualizar pago enviado
+                    </button>
+                    <a 
+                      href={`https://wa.me/51972138509?text=${encodeURIComponent(`Hola, soy ${students.find(s=>s.ID===selectedStudent)?.Name}, solicito mi contraseña de estudiante.`)}`}
+                      target="_blank" rel="noreferrer"
+                      className="text-xs text-green-700 hover:text-green-900 underline flex justify-center items-center gap-1 font-medium mt-1"
+                    >
+                      <MessageCircle size={14} /> Olvidé mi contraseña (Solicitar por WhatsApp)
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 border-t border-green-200 pt-4 text-left">
+                  <p className="text-sm font-bold text-green-800 mb-2 text-center">Comprobante Actual:</p>
+                  <img src={getExistingPayment()?.ImageBase64} alt="Comprobante" className="w-full max-h-64 object-contain rounded border mb-4 bg-white" />
+                  
+                  {!isEditing ? (
+                    <button 
+                      type="button"
+                      onClick={() => setIsEditing(true)}
+                      disabled={(getExistingPayment()?.Attempts || 1) >= 3}
+                      className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Editar comprobante (Te quedan {3 - (getExistingPayment()?.Attempts || 1)} intentos)
+                    </button>
+                  ) : (
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm mt-4">
+                       <h4 className="font-bold text-gray-800 mb-3 text-center">Subir Nuevo Comprobante</h4>
+                       <div 
+                        onClick={() => fileInputRef.current.click()}
+                        className="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-50 transition"
+                      >
+                         <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
+                         {imagePreview ? (
+                            <img src={imagePreview} className="w-full h-32 object-contain rounded-lg" />
+                         ) : (
+                            <div className="text-center py-4">
+                              <ImageIcon size={24} className="mx-auto mb-2 text-gray-400" />
+                              <span className="text-xs font-medium">Toca para subir nueva imagen</span>
+                            </div>
+                         )}
+                      </div>
+                      <div className="flex gap-3 mt-4">
+                        <button type="button" onClick={() => {setIsEditing(false); setImageFile(null); setImagePreview(null);}} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-bold transition">Cancelar</button>
+                        <button type="button" onClick={handleSubmit} disabled={isSubmitting || !imageFile} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold transition disabled:opacity-50">Guardar</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : isExempted ? (
             <div className="bg-gray-100 border border-gray-200 p-6 rounded-xl text-center shadow-sm">
@@ -208,23 +299,25 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting || hasAlreadyPaid || isExempted || !selectedActivity || !selectedStudent || (!imageFile && !hasAlreadyPaid && !isExempted)}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 size={20} className="animate-spin" />
-                Procesando...
-              </>
-            ) : (
-              <>
-                <Upload size={20} />
-                Enviar Comprobante
-              </>
-            )}
-          </button>
+          {!hasAlreadyPaid && !isExempted && (
+            <button
+              type="submit"
+              disabled={isSubmitting || !selectedActivity || !selectedStudent || !imageFile}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <Upload size={20} />
+                  Enviar Comprobante
+                </>
+              )}
+            </button>
+          )}
         </form>
       </div>
     </div>

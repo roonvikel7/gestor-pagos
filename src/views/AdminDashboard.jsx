@@ -5,6 +5,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as htmlToImage from 'html-to-image';
 import ExcelReportTemplate from '../components/ExcelReportTemplate';
+import { getRandomPassword } from '../utils/passwords';
 
 export default function AdminDashboard({ setView, globalData, fetchGlobalData, scriptUrl, onLogout }) {
   const [activeTab, setActiveTabState] = useState(() => {
@@ -97,6 +98,10 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     setMsg({ type: '', text: '' });
     
     const names = studentListText.split('\n').map(n => n.trim()).filter(n => n);
+    const studentsWithPasswords = names.map(name => ({
+      name,
+      password: getRandomPassword()
+    }));
     
     try {
       const res = await fetch(scriptUrl, {
@@ -104,12 +109,12 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'addStudents',
-          names: JSON.stringify(names)
+          students: JSON.stringify(studentsWithPasswords)
         })
       });
       const data = await res.json();
       if(data.status === 'success') {
-        setMsg({ type: 'success', text: `${names.length} alumnos agregados` });
+        setMsg({ type: 'success', text: `${names.length} alumnos agregados con contraseñas` });
         setStudentListText('');
         fetchGlobalData();
       } else {
@@ -117,6 +122,41 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       }
     } catch(err) {
       setMsg({ type: 'error', text: 'Error de red al agregar alumnos' });
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleGenerateMissingPasswords = async () => {
+    const studentsWithoutPass = students.filter(s => !s.Password);
+    if (studentsWithoutPass.length === 0) {
+      alert("Todos los alumnos ya tienen contraseña.");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    const passwordsDict = {};
+    studentsWithoutPass.forEach(s => {
+      passwordsDict[s.ID] = getRandomPassword();
+    });
+
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'generateMissingPasswords',
+          passwordsDict: JSON.stringify(passwordsDict)
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        setMsg({ type: 'success', text: `Se generaron contraseñas para ${data.data.updated} alumnos antiguos.` });
+        fetchGlobalData();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    } catch(err) {
+      alert('Error de red al generar contraseñas');
     }
     setIsSubmitting(false);
   };
@@ -697,13 +737,45 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
             </div>
             
             <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h4 className="font-bold text-gray-900 mb-4">Total: {students.length} alumnos registrados</h4>
-              <div className="flex flex-wrap gap-2">
-                {students.map(s => (
-                  <span key={s.ID} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium border">
-                    {s.Name}
-                  </span>
-                ))}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+                <h4 className="font-bold text-gray-900">Total: {students.length} alumnos registrados</h4>
+                <button 
+                  onClick={handleGenerateMissingPasswords}
+                  disabled={isSubmitting}
+                  className="text-sm bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-lg font-medium transition disabled:opacity-50"
+                >
+                  Generar contraseñas faltantes
+                </button>
+              </div>
+              
+              <div className="overflow-x-auto border rounded-xl">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 text-gray-600 font-semibold border-b">
+                    <tr>
+                      <th className="p-3 border-r">Nombres</th>
+                      <th className="p-3 text-center w-32">Contraseña (4 letras)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {students.sort((a,b)=>a.Name.localeCompare(b.Name)).map(s => (
+                      <tr key={s.ID} className="hover:bg-gray-50">
+                        <td className="p-3 border-r font-medium text-gray-900">{s.Name}</td>
+                        <td className="p-3 text-center">
+                          {s.Password ? (
+                            <span className="font-mono bg-indigo-50 text-indigo-700 font-bold px-2 py-1 rounded tracking-wider">
+                              {s.Password}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 italic text-xs">Sin contraseña</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {students.length === 0 && (
+                      <tr><td colSpan="2" className="p-4 text-center text-gray-500">No hay alumnos</td></tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
