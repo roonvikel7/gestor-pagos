@@ -189,10 +189,10 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
         <div className="w-full max-w-sm">
           <button 
             onClick={() => setView('home')}
-            className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition"
+            className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition font-medium"
           >
             <ArrowLeft size={20} className="mr-2" />
-            Volver
+            Volver al Menú Principal
           </button>
           
           <div className="bg-white p-8 rounded-2xl shadow-xl text-center space-y-6">
@@ -266,9 +266,9 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
       <div className="w-full max-w-lg flex justify-between items-center mb-6">
         <button 
           onClick={() => { setIsAuthenticated(false); setEnteredPassword(''); localStorage.removeItem('app_student_auth'); setView('home'); }}
-          className="flex items-center text-gray-500 hover:text-gray-900 transition"
+          className="flex items-center text-red-500 hover:text-red-700 font-bold transition bg-red-50 px-3 py-2 rounded-lg"
         >
-          <ArrowLeft size={20} className="mr-2" /> Salir
+          <X size={20} className="mr-2" /> Cerrar Sesión
         </button>
         <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
           <User size={20} className="text-blue-600" />
