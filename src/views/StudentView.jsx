@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle } from 'lucide-react';
+import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle, X } from 'lucide-react';
 import { compressImage } from '../utils/imageCompression';
 
 export default function StudentView({ setView, globalData, fetchGlobalData, scriptUrl }) {
@@ -20,6 +20,8 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
   const [passwordError, setPasswordError] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -38,14 +40,43 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
     }
   }, [globalData]);
 
-  // Check URL params for ?actividad=ID
+  // Check URL params and handle popstate for browser history
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const actId = params.get('actividad');
-    if (actId) {
-      setSelectedActivity(actId);
-    }
+    const syncFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const actId = params.get('actividad');
+      const stdId = params.get('alumno');
+      setSelectedActivity(actId || '');
+      setSelectedStudent(stdId || '');
+    };
+    
+    // Initial sync
+    syncFromUrl();
+    
+    // Listen for back/forward
+    window.addEventListener('popstate', syncFromUrl);
+    return () => window.removeEventListener('popstate', syncFromUrl);
   }, []);
+
+  const handleActivityChange = (e) => {
+    const val = e.target.value;
+    setSelectedActivity(val);
+    const url = new URL(window.location);
+    url.searchParams.set('view', 'student');
+    if (val) url.searchParams.set('actividad', val);
+    else url.searchParams.delete('actividad');
+    window.history.pushState({}, '', url);
+  };
+
+  const handleStudentChange = (e) => {
+    const val = e.target.value;
+    setSelectedStudent(val);
+    const url = new URL(window.location);
+    url.searchParams.set('view', 'student');
+    if (val) url.searchParams.set('alumno', val);
+    else url.searchParams.delete('alumno');
+    window.history.pushState({}, '', url);
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -151,9 +182,9 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
             <label className="block text-sm font-medium text-gray-700 mb-1">Actividad</label>
             <select
               value={selectedActivity}
-              onChange={(e) => setSelectedActivity(e.target.value)}
+              onChange={handleActivityChange}
               className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
-              disabled={new URLSearchParams(window.location.search).get('actividad') !== null}
+              disabled={new URLSearchParams(window.location.search).get('actividad') !== null && !selectedStudent} // Only lock if it's the strict query entry point without student
             >
               <option value="">Selecciona una actividad...</option>
               {activities.filter(act => act.Status !== 'paused').map(act => (
@@ -166,7 +197,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
             <label className="block text-sm font-medium text-gray-700 mb-1">Tu Nombre</label>
             <select
               value={selectedStudent}
-              onChange={(e) => setSelectedStudent(e.target.value)}
+              onChange={handleStudentChange}
               className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
             >
               <option value="">Selecciona tu nombre...</option>
@@ -224,7 +255,12 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
               ) : (
                 <div className="mt-4 border-t border-green-200 pt-4 text-left">
                   <p className="text-sm font-bold text-green-800 mb-2 text-center">Comprobante Actual:</p>
-                  <img src={getExistingPayment()?.ImageBase64} alt="Comprobante" className="w-full max-h-64 object-contain rounded border mb-4 bg-white" />
+                  <img 
+                    src={getExistingPayment()?.ImageBase64} 
+                    alt="Comprobante" 
+                    className="w-full max-h-64 object-contain rounded border mb-4 bg-white cursor-pointer hover:opacity-90 transition shadow-sm" 
+                    onClick={() => setIsImageModalOpen(true)}
+                  />
                   
                   {!isEditing ? (
                     <button 
@@ -320,6 +356,27 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
           )}
         </form>
       </div>
+
+      {isImageModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+          onClick={() => setIsImageModalOpen(false)}
+        >
+          <div className="relative max-w-4xl w-full h-full flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="absolute top-4 right-4 text-white bg-black/50 hover:bg-black/80 rounded-full p-2 transition z-10"
+              onClick={() => setIsImageModalOpen(false)}
+            >
+              <X size={24} />
+            </button>
+            <img 
+              src={getExistingPayment()?.ImageBase64} 
+              alt="Comprobante en grande" 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
