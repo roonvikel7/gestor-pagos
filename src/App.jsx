@@ -10,16 +10,33 @@ import { Loader2 } from 'lucide-react';
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTqqbD5BLwe3eNmmXTMVgrHU5GpvlwLJG0pEPeVKo9abPc5QJAeGsRhw9nwESvLm-wkg/exec";
 
 function App() {
-  const [view, setView] = useState('home');
+  const [view, setView] = useState(() => localStorage.getItem('app_view') || 'home');
   const [globalData, setGlobalData] = useState({ activities: [], students: [], payments: [], exemptions: [] });
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('app_auth') === 'true');
+
+  useEffect(() => {
+    localStorage.setItem('app_view', view);
+  }, [view]);
+
+  useEffect(() => {
+    localStorage.setItem('app_auth', isAuthenticated);
+  }, [isAuthenticated]);
+
+  const handleSetView = (newView) => {
+    // Si intenta ir al login pero ya está autenticado, mandarlo directo al dashboard
+    if (newView === 'admin-login' && isAuthenticated) {
+      setView('admin-dashboard');
+    } else {
+      setView(newView);
+    }
+  };
 
   // Inicialmente ver si hay un parámetro 'actividad'
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('actividad')) {
-      setView('student');
+      handleSetView('student');
     }
   }, []);
 
@@ -74,14 +91,14 @@ function App() {
         </div>
       )}
 
-      {view === 'home' && <Home setView={setView} />}
-      {view === 'student' && <StudentView setView={setView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} />}
-      {view === 'admin-login' && <AdminLogin setView={setView} onLogin={handleAdminLogin} />}
+      {view === 'home' && <Home setView={handleSetView} />}
+      {view === 'student' && <StudentView setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} />}
+      {view === 'admin-login' && <AdminLogin setView={handleSetView} onLogin={handleAdminLogin} />}
       {view === 'admin-dashboard' && (
         isAuthenticated ? (
-          <AdminDashboard setView={setView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} />
+          <AdminDashboard setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} />
         ) : (
-          <Home setView={setView} />
+          <Home setView={handleSetView} />
         )
       )}
     </>
