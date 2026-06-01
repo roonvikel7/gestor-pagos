@@ -150,7 +150,15 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
               className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
             >
               <option value="">Selecciona tu nombre...</option>
-              {students.sort((a,b) => a.Name.localeCompare(b.Name)).map(std => (
+              {students
+                .filter(std => {
+                  if (!selectedActivity) return true;
+                  return !globalData?.exemptions?.some(
+                    e => e.StudentID === std.ID && e.ActivityID === selectedActivity
+                  );
+                })
+                .sort((a,b) => a.Name.localeCompare(b.Name))
+                .map(std => (
                 <option key={std.ID} value={std.ID}>{std.Name}</option>
               ))}
             </select>
