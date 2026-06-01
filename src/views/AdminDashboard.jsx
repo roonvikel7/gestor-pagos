@@ -27,6 +27,9 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       const params = new URLSearchParams(window.location.search);
       const t = params.get('tab') || 'pagos';
       setActiveTabState(t);
+      if (params.get('modal') !== 'image') {
+        setSelectedImage(null);
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -36,6 +39,21 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
   
   // Modals
   const [selectedImage, setSelectedImage] = useState(null);
+
+  const openImageModal = (image) => {
+    setSelectedImage(image);
+    const url = new URL(window.location);
+    url.searchParams.set('modal', 'image');
+    window.history.pushState({}, '', url);
+  };
+
+  const closeImageModal = () => {
+    if (new URLSearchParams(window.location.search).get('modal') === 'image') {
+      window.history.back(); // This triggers popstate, which clears the selectedImage
+    } else {
+      setSelectedImage(null);
+    }
+  };
   
   // Exemption Modal State
   const [showExemptionModal, setShowExemptionModal] = useState(false);
@@ -570,7 +588,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                                   <Check size={14} /> Pagó
                                 </span>
                                 <button 
-                                  onClick={() => setSelectedImage(payment.ImageBase64)}
+                                  onClick={() => openImageModal(payment.ImageBase64)}
                                   className="text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 px-2 py-1 rounded"
                                 >
                                   <ImageIcon size={12} /> Ver
@@ -783,7 +801,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       </main>
 
       {/* Modals */}
-      <ImageModal base64Image={selectedImage} onClose={() => setSelectedImage(null)} />
+      <ImageModal base64Image={selectedImage} onClose={closeImageModal} />
 
       {/* Exemption Modal */}
       {showExemptionModal && selectedActForExemption && (

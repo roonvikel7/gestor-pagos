@@ -23,6 +23,21 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
   
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
+  const openImageModal = () => {
+    setIsImageModalOpen(true);
+    const url = new URL(window.location);
+    url.searchParams.set('modal', 'image');
+    window.history.pushState({}, '', url);
+  };
+
+  const closeImageModal = () => {
+    if (new URLSearchParams(window.location.search).get('modal') === 'image') {
+      window.history.back(); 
+    } else {
+      setIsImageModalOpen(false);
+    }
+  };
+
   const fileInputRef = useRef(null);
 
   const hasAlreadyPaid = globalData?.payments?.some(
@@ -48,6 +63,9 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
       const stdId = params.get('alumno');
       setSelectedActivity(actId || '');
       setSelectedStudent(stdId || '');
+      if (params.get('modal') !== 'image') {
+        setIsImageModalOpen(false);
+      }
     };
     
     // Initial sync
@@ -259,7 +277,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                     src={getExistingPayment()?.ImageBase64} 
                     alt="Comprobante" 
                     className="w-full max-h-64 object-contain rounded border mb-4 bg-white cursor-pointer hover:opacity-90 transition shadow-sm" 
-                    onClick={() => setIsImageModalOpen(true)}
+                    onClick={openImageModal}
                   />
                   
                   {!isEditing ? (
@@ -360,12 +378,12 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
       {isImageModalOpen && (
         <div 
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-          onClick={() => setIsImageModalOpen(false)}
+          onClick={closeImageModal}
         >
           <div className="relative max-w-4xl w-full h-full flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
             <button 
               className="absolute top-4 right-4 text-white bg-black/50 hover:bg-black/80 rounded-full p-2 transition z-10"
-              onClick={() => setIsImageModalOpen(false)}
+              onClick={closeImageModal}
             >
               <X size={24} />
             </button>
