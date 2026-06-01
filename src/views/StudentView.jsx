@@ -17,6 +17,14 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
 
   const fileInputRef = useRef(null);
 
+  const hasAlreadyPaid = globalData?.payments?.some(
+    p => p.StudentID === selectedStudent && p.ActivityID === selectedActivity
+  );
+  
+  const isExempted = globalData?.exemptions?.some(
+    e => e.StudentID === selectedStudent && e.ActivityID === selectedActivity
+  );
+
   useEffect(() => {
     if (globalData) {
       setActivities(globalData.activities || []);
@@ -148,40 +156,54 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Captura (Yape/Plin)</label>
-            <div 
-              onClick={() => fileInputRef.current.click()}
-              className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition"
-            >
-              <input 
-                type="file" 
-                accept="image/*" 
-                ref={fileInputRef} 
-                onChange={handleImageChange} 
-                className="hidden" 
-              />
-              {imagePreview ? (
-                <div className="relative w-full">
-                  <img src={imagePreview} alt="Preview" className="w-full h-48 object-contain rounded-lg" />
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition rounded-lg text-white font-medium">
-                    Cambiar imagen
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <ImageIcon size={32} className="mb-2 text-gray-400" />
-                  <span className="text-sm font-medium">Toca para subir imagen</span>
-                  <span className="text-xs text-gray-400 mt-1">JPG, PNG (Max 5MB)</span>
-                </>
-              )}
+          {hasAlreadyPaid ? (
+            <div className="bg-green-50 border border-green-200 p-6 rounded-xl text-center shadow-sm">
+              <CheckCircle2 size={40} className="text-green-500 mx-auto mb-3" />
+              <h3 className="font-bold text-green-800 text-lg">¡Pago Registrado!</h3>
+              <p className="text-sm text-green-700 mt-1">El sistema ya tiene tu comprobante guardado para esta actividad. ¡Muchas gracias!</p>
             </div>
-          </div>
+          ) : isExempted ? (
+            <div className="bg-gray-100 border border-gray-200 p-6 rounded-xl text-center shadow-sm">
+              <CheckCircle2 size={40} className="text-gray-400 mx-auto mb-3" />
+              <h3 className="font-bold text-gray-800 text-lg">No participas en esta actividad</h3>
+              <p className="text-sm text-gray-600 mt-1">Has sido marcado como exonerado por la tesorera. No es necesario que envíes ningún comprobante.</p>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Captura (Yape/Plin)</label>
+              <div 
+                onClick={() => fileInputRef.current.click()}
+                className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition"
+              >
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  ref={fileInputRef} 
+                  onChange={handleImageChange} 
+                  className="hidden" 
+                />
+                {imagePreview ? (
+                  <div className="relative w-full">
+                    <img src={imagePreview} alt="Preview" className="w-full h-48 object-contain rounded-lg" />
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition rounded-lg text-white font-medium">
+                      Cambiar imagen
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <ImageIcon size={32} className="mb-2 text-gray-400" />
+                    <span className="text-sm font-medium">Toca para subir imagen</span>
+                    <span className="text-xs text-gray-400 mt-1">JPG, PNG (Max 5MB)</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-70"
+            disabled={isSubmitting || hasAlreadyPaid || isExempted || !selectedActivity || !selectedStudent || (!imageFile && !hasAlreadyPaid && !isExempted)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>
