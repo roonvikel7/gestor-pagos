@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle, X } from 'lucide-react';
+import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle, X, User } from 'lucide-react';
 import { compressImage } from '../utils/imageCompression';
 
 export default function StudentView({ setView, globalData, fetchGlobalData, scriptUrl }) {
@@ -15,7 +15,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  // Editing states
+  // Editing & Auth states
   const [enteredPassword, setEnteredPassword] = useState('');
   const [passwordError, setPasswordError] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -68,10 +68,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
       }
     };
     
-    // Initial sync
     syncFromUrl();
-    
-    // Listen for back/forward
     window.addEventListener('popstate', syncFromUrl);
     return () => window.removeEventListener('popstate', syncFromUrl);
   }, []);
@@ -83,6 +80,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
     url.searchParams.set('view', 'student');
     if (val) url.searchParams.set('actividad', val);
     else url.searchParams.delete('actividad');
+    if (selectedStudent) url.searchParams.set('alumno', selectedStudent);
     window.history.pushState({}, '', url);
   };
 
@@ -93,6 +91,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
     url.searchParams.set('view', 'student');
     if (val) url.searchParams.set('alumno', val);
     else url.searchParams.delete('alumno');
+    if (selectedActivity) url.searchParams.set('actividad', selectedActivity);
     window.history.pushState({}, '', url);
   };
 
@@ -146,7 +145,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
       const result = await response.json();
       if (result.status === 'success') {
         setSuccess(true);
-        fetchGlobalData(); // refresh data silently
+        fetchGlobalData();
       } else {
         throw new Error(result.message || 'Error al enviar');
       }
@@ -166,28 +165,112 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
           <h2 className="text-2xl font-bold text-gray-900">¡Pago Enviado!</h2>
           <p className="text-gray-600">Tu comprobante ha sido registrado exitosamente.</p>
           <button
-            onClick={() => setView('home')}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 p-3 rounded-lg font-medium transition"
+            onClick={() => {
+              setSuccess(false);
+              setIsEditing(false);
+              setImageFile(null);
+              setImagePreview(null);
+            }}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-medium transition"
           >
-            Volver al inicio
+            Volver a mis actividades
           </button>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex justify-center items-start pt-12">
-      <div className="max-w-lg w-full bg-white rounded-2xl shadow-md p-6 sm:p-8">
-        <button 
-          onClick={() => setView('home')}
-          className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition"
-        >
-          <ArrowLeft size={20} className="mr-2" />
-          Volver
-        </button>
+  // --- STUDENT LOGIN SCREEN ---
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-sm">
+          <button 
+            onClick={() => setView('home')}
+            className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition"
+          >
+            <ArrowLeft size={20} className="mr-2" />
+            Volver
+          </button>
+          
+          <div className="bg-white p-8 rounded-2xl shadow-xl text-center space-y-6">
+            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
+              <User size={32} />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Portal Estudiante</h2>
+            
+            <div className="text-left space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tu Nombre</label>
+                <select
+                  value={selectedStudent}
+                  onChange={handleStudentChange}
+                  className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                >
+                  <option value="">Selecciona tu nombre...</option>
+                  {students.sort((a,b) => a.Name.localeCompare(b.Name)).map(std => (
+                    <option key={std.ID} value={std.ID}>{std.Name}</option>
+                  ))}
+                </select>
+              </div>
 
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Subir Comprobante</h2>
+              {selectedStudent && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña (4 letras)</label>
+                  <input 
+                    type="password" 
+                    placeholder="****" 
+                    value={enteredPassword}
+                    onChange={(e) => {setEnteredPassword(e.target.value.toUpperCase()); setPasswordError(false);}}
+                    maxLength={4}
+                    className={`w-full text-center text-xl border rounded-lg p-3 uppercase font-mono tracking-widest bg-gray-50 outline-none transition focus:ring-2 ${passwordError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+                  />
+                  {passwordError && <p className="text-red-500 text-sm mt-1 font-medium text-center">Contraseña incorrecta</p>}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleVerifyPassword}
+              disabled={!selectedStudent || enteredPassword.length !== 4}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Ingresar
+            </button>
+            
+            {selectedStudent && (
+              <a 
+                href={`https://wa.me/51972138509?text=${encodeURIComponent(`Hola, soy ${students.find(s=>s.ID===selectedStudent)?.Name}, solicito mi contraseña de estudiante.`)}`}
+                target="_blank" rel="noreferrer"
+                className="text-sm text-blue-600 hover:text-blue-800 underline flex justify-center items-center gap-1 font-medium"
+              >
+                <MessageCircle size={16} /> Olvidé mi contraseña
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- STUDENT DASHBOARD SCREEN ---
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 flex flex-col items-center pt-8">
+      <div className="w-full max-w-lg flex justify-between items-center mb-6">
+        <button 
+          onClick={() => { setIsAuthenticated(false); setEnteredPassword(''); }}
+          className="flex items-center text-gray-500 hover:text-gray-900 transition"
+        >
+          <ArrowLeft size={20} className="mr-2" /> Salir
+        </button>
+        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <User size={20} className="text-blue-600" />
+          {students.find(s => s.ID === selectedStudent)?.Name}
+        </h2>
+      </div>
+
+      <div className="max-w-lg w-full bg-white rounded-2xl shadow-md p-6 sm:p-8">
+        <h3 className="text-xl font-bold text-gray-900 mb-6">Tus Actividades</h3>
 
         {error && (
           <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-6 text-sm">
@@ -195,14 +278,13 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Actividad</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Selecciona la actividad</label>
             <select
               value={selectedActivity}
               onChange={handleActivityChange}
               className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
-              disabled={new URLSearchParams(window.location.search).get('actividad') !== null && !selectedStudent} // Only lock if it's the strict query entry point without student
             >
               <option value="">Selecciona una actividad...</option>
               {activities.filter(act => act.Status !== 'paused').map(act => (
@@ -211,66 +293,13 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tu Nombre</label>
-            <select
-              value={selectedStudent}
-              onChange={handleStudentChange}
-              className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
-            >
-              <option value="">Selecciona tu nombre...</option>
-              {students
-                .filter(std => {
-                  if (!selectedActivity) return true;
-                  return !globalData?.exemptions?.some(
-                    e => e.StudentID === std.ID && e.ActivityID === selectedActivity
-                  );
-                })
-                .sort((a,b) => a.Name.localeCompare(b.Name))
-                .map(std => (
-                <option key={std.ID} value={std.ID}>{std.Name}</option>
-              ))}
-            </select>
-          </div>
-
-          {hasAlreadyPaid ? (
-            <div className="bg-green-50 border border-green-200 p-6 rounded-xl text-center shadow-sm">
-              <CheckCircle2 size={40} className="text-green-500 mx-auto mb-3" />
-              <h3 className="font-bold text-green-800 text-lg">¡Pago Registrado!</h3>
-              <p className="text-sm text-green-700 mt-1 mb-4">El sistema ya tiene tu comprobante guardado para esta actividad. ¡Muchas gracias!</p>
-              
-              {!isAuthenticated ? (
-                <div className="mt-4 border-t border-green-200 pt-4">
-                  <p className="text-sm font-medium text-green-800 mb-3">¿Deseas visualizar o editar tu pago?</p>
-                  <div className="flex flex-col gap-3">
-                    <div>
-                      <input 
-                        type="password" 
-                        placeholder="Contraseña (4 letras)" 
-                        value={enteredPassword}
-                        onChange={(e) => {setEnteredPassword(e.target.value.toUpperCase()); setPasswordError(false);}}
-                        maxLength={4}
-                        className={`w-full text-center border rounded-lg p-3 uppercase font-mono tracking-widest outline-none focus:ring-2 ${passwordError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'}`}
-                      />
-                      {passwordError && <p className="text-red-500 text-xs mt-1 font-medium">Contraseña incorrecta</p>}
-                    </div>
-                    <button 
-                      type="button"
-                      onClick={handleVerifyPassword}
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition"
-                    >
-                      Visualizar pago enviado
-                    </button>
-                    <a 
-                      href={`https://wa.me/51972138509?text=${encodeURIComponent(`Hola, soy ${students.find(s=>s.ID===selectedStudent)?.Name}, solicito mi contraseña de estudiante.`)}`}
-                      target="_blank" rel="noreferrer"
-                      className="text-xs text-green-700 hover:text-green-900 underline flex justify-center items-center gap-1 font-medium mt-1"
-                    >
-                      <MessageCircle size={14} /> Olvidé mi contraseña (Solicitar por WhatsApp)
-                    </a>
-                  </div>
-                </div>
-              ) : (
+          {selectedActivity && (
+            hasAlreadyPaid ? (
+              <div className="bg-green-50 border border-green-200 p-6 rounded-xl text-center shadow-sm">
+                <CheckCircle2 size={40} className="text-green-500 mx-auto mb-3" />
+                <h3 className="font-bold text-green-800 text-lg">¡Pago Registrado!</h3>
+                <p className="text-sm text-green-700 mt-1 mb-4">El sistema ya tiene tu comprobante guardado para esta actividad. ¡Muchas gracias!</p>
+                
                 <div className="mt-4 border-t border-green-200 pt-4 text-left">
                   <p className="text-sm font-bold text-green-800 mb-2 text-center">Comprobante Actual:</p>
                   <img 
@@ -313,51 +342,51 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          ) : isExempted ? (
-            <div className="bg-gray-100 border border-gray-200 p-6 rounded-xl text-center shadow-sm">
-              <CheckCircle2 size={40} className="text-gray-400 mx-auto mb-3" />
-              <h3 className="font-bold text-gray-800 text-lg">No participas en esta actividad</h3>
-              <p className="text-sm text-gray-600 mt-1">Has sido marcado como exonerado por la tesorera. No es necesario que envíes ningún comprobante.</p>
-            </div>
-          ) : (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Captura (Yape/Plin)</label>
-              <div 
-                onClick={() => fileInputRef.current.click()}
-                className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition"
-              >
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  ref={fileInputRef} 
-                  onChange={handleImageChange} 
-                  className="hidden" 
-                />
-                {imagePreview ? (
-                  <div className="relative w-full">
-                    <img src={imagePreview} alt="Preview" className="w-full h-48 object-contain rounded-lg" />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition rounded-lg text-white font-medium">
-                      Cambiar imagen
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <ImageIcon size={32} className="mb-2 text-gray-400" />
-                    <span className="text-sm font-medium">Toca para subir imagen</span>
-                    <span className="text-xs text-gray-400 mt-1">JPG, PNG (Max 5MB)</span>
-                  </>
-                )}
               </div>
-            </div>
+            ) : isExempted ? (
+              <div className="bg-gray-100 border border-gray-200 p-6 rounded-xl text-center shadow-sm">
+                <CheckCircle2 size={40} className="text-gray-400 mx-auto mb-3" />
+                <h3 className="font-bold text-gray-800 text-lg">No participas en esta actividad</h3>
+                <p className="text-sm text-gray-600 mt-1">Has sido marcado como exonerado por la tesorera. No es necesario que envíes ningún comprobante.</p>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Captura (Yape/Plin)</label>
+                <div 
+                  onClick={() => fileInputRef.current.click()}
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition"
+                >
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    ref={fileInputRef} 
+                    onChange={handleImageChange} 
+                    className="hidden" 
+                  />
+                  {imagePreview ? (
+                    <div className="relative w-full">
+                      <img src={imagePreview} alt="Preview" className="w-full h-48 object-contain rounded-lg" />
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition rounded-lg text-white font-medium">
+                        Cambiar imagen
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <ImageIcon size={32} className="mb-2 text-gray-400" />
+                      <span className="text-sm font-medium">Toca para subir imagen</span>
+                      <span className="text-xs text-gray-400 mt-1">JPG, PNG (Max 5MB)</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )
           )}
 
-          {!hasAlreadyPaid && !isExempted && (
+          {!hasAlreadyPaid && !isExempted && selectedActivity && (
             <button
               type="submit"
-              disabled={isSubmitting || !selectedActivity || !selectedStudent || !imageFile}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting || !imageFile}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed mt-6"
             >
               {isSubmitting ? (
                 <>

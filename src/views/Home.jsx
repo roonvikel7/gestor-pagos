@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, ShieldCheck } from 'lucide-react';
+import { User, ShieldCheck, Bot } from 'lucide-react';
 
 export default function Home({ setView }) {
   return (
@@ -28,6 +28,15 @@ export default function Home({ setView }) {
           </button>
         </div>
       </div>
+
+      {/* Floating Robot Icon for Super Admin */}
+      <button
+        onClick={() => setView('super-login')}
+        className="fixed bottom-6 right-6 bg-white p-4 rounded-full shadow-2xl text-indigo-600 hover:scale-110 hover:bg-indigo-50 transition border border-indigo-100 z-50 flex items-center justify-center"
+        title="Panel Administrador"
+      >
+        <Bot size={28} />
+      </button>
     </div>
   );
 }

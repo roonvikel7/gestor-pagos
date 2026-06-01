@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Lock, ArrowRight } from 'lucide-react';
 
-export default function AdminLogin({ setView, onLogin }) {
+export default function AdminLogin({ setView, onLogin, requiredRole = 'tesorera' }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (pin === '2627') {
-      onLogin();
+    if (requiredRole === 'tesorera' && pin === '2627') {
+      onLogin('tesorera');
+    } else if (requiredRole === 'admin' && pin === '9999') {
+      onLogin('admin');
     } else {
       setError(true);
       setPin('');
@@ -30,7 +32,9 @@ export default function AdminLogin({ setView, onLogin }) {
           <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Acceso Tesorera</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {requiredRole === 'tesorera' ? 'Acceso Tesorera' : 'Acceso Administrador'}
+          </h2>
           <p className="text-gray-500 mb-6 text-sm">Ingresa el PIN para continuar</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">

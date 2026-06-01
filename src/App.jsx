@@ -41,6 +41,7 @@ function App() {
   const [globalData, setGlobalData] = useState({ activities: [], students: [], payments: [], exemptions: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('app_auth') === 'true');
+  const [userRole, setUserRole] = useState(() => localStorage.getItem('app_role') || '');
 
   useEffect(() => {
     localStorage.setItem('app_view', view);
@@ -48,11 +49,12 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem('app_auth', isAuthenticated);
-  }, [isAuthenticated]);
+    localStorage.setItem('app_role', userRole);
+  }, [isAuthenticated, userRole]);
 
   const handleSetView = (newView) => {
     // Si intenta ir al login pero ya está autenticado, mandarlo directo al dashboard
-    if (newView === 'admin-login' && isAuthenticated) {
+    if ((newView === 'admin-login' || newView === 'super-login') && isAuthenticated) {
       setView('admin-dashboard');
     } else {
       setView(newView);
@@ -83,13 +85,15 @@ function App() {
     fetchGlobalData();
   }, []);
 
-  const handleAdminLogin = () => {
+  const handleAdminLogin = (role) => {
     setIsAuthenticated(true);
+    setUserRole(role);
     setView('admin-dashboard');
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setUserRole('');
     setView('home');
   };
 
@@ -117,10 +121,11 @@ function App() {
 
       {view === 'home' && <Home setView={handleSetView} />}
       {view === 'student' && <StudentView setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} />}
-      {view === 'admin-login' && <AdminLogin setView={handleSetView} onLogin={handleAdminLogin} />}
+      {view === 'admin-login' && <AdminLogin setView={handleSetView} onLogin={handleAdminLogin} requiredRole="tesorera" />}
+      {view === 'super-login' && <AdminLogin setView={handleSetView} onLogin={handleAdminLogin} requiredRole="admin" />}
       {view === 'admin-dashboard' && (
         isAuthenticated ? (
-          <AdminDashboard setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} onLogout={handleLogout} />
+          <AdminDashboard setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} onLogout={handleLogout} role={userRole} />
         ) : (
           <Home setView={handleSetView} />
         )

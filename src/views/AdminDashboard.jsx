@@ -7,7 +7,7 @@ import * as htmlToImage from 'html-to-image';
 import ExcelReportTemplate from '../components/ExcelReportTemplate';
 import { getRandomPassword } from '../utils/passwords';
 
-export default function AdminDashboard({ setView, globalData, fetchGlobalData, scriptUrl, onLogout }) {
+export default function AdminDashboard({ setView, globalData, fetchGlobalData, scriptUrl, onLogout, role }) {
   const [activeTab, setActiveTabState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('tab') || 'pagos';
@@ -21,6 +21,14 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     url.searchParams.set('tab', newTab);
     window.history.pushState({}, '', url);
   };
+
+  const tabs = role === 'admin' ? ['pagos', 'actividades', 'alumnos'] : ['pagos', 'actividades'];
+
+  React.useEffect(() => {
+    if (role === 'tesorera' && activeTab === 'alumnos') {
+      setActiveTab('pagos');
+    }
+  }, [role, activeTab]);
 
   React.useEffect(() => {
     const handlePopState = () => {
@@ -532,7 +540,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
 
       {/* Tabs */}
       <div className="bg-white border-b px-6 flex space-x-6 overflow-x-auto">
-        {['pagos', 'actividades', 'alumnos'].map(tab => (
+        {tabs.map(tab => (
           <button
             key={tab}
             onClick={() => { setActiveTab(tab); setMsg({type:'', text:''}); }}
@@ -729,8 +737,8 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
           </div>
         )}
 
-        {/* Alumnos Tab */}
-        {activeTab === 'alumnos' && (
+        {/* Alumnos Tab (Only Admin) */}
+        {activeTab === 'alumnos' && role === 'admin' && (
           <div className="max-w-3xl space-y-6">
             <div className="bg-white rounded-2xl shadow-sm border p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
