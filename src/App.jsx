@@ -73,13 +73,36 @@ function App() {
   }, [isAuthenticated, userRole]);
 
   const handleSetView = (newView) => {
-    // Si intenta ir al login pero ya está autenticado, mandarlo directo al dashboard
-    if ((newView === 'admin-login' || newView === 'super-login') && isAuthenticated) {
-      setView('admin-dashboard');
-    } else {
-      setView(newView);
+    if (newView === view) return;
+    
+    // Auto-redirect if they try to login but are already authenticated for that role
+    if (newView === 'admin-login' && isAuthenticated && userRole === 'tesorera') {
+      newView = 'admin-dashboard';
+    } else if (newView === 'super-login' && isAuthenticated && userRole === 'admin') {
+      newView = 'admin-dashboard';
+    } else if ((newView === 'admin-login' || newView === 'super-login') && isAuthenticated) {
+      // Trying to access a different login while authenticated: logout first
+      setIsAuthenticated(false);
+      setUserRole('');
+      localStorage.removeItem('app_auth');
+      localStorage.removeItem('app_role');
     }
+
+    setViewState(newView);
+    const url = new URL(window.location);
+    url.searchParams.set('view', newView);
+    window.history.pushState({}, '', url);
   };
+
+  useEffect(() => {
+    if (view === 'home') {
+      if (isAuthenticated) {
+        handleSetView('admin-dashboard');
+      } else if (localStorage.getItem('app_student_auth') === 'true') {
+        handleSetView('student');
+      }
+    }
+  }, [view, isAuthenticated]);
 
   const fetchGlobalData = async () => {
     try {
