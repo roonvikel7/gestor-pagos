@@ -486,7 +486,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       const blob = await response.blob();
       const file = new File([blob], `Control_${actName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (navigator.canShare && navigator.canShare({ files: [file] }) && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         // Soporte nativo para móviles o navegadores compatibles
         await navigator.share({
           files: [file],
@@ -499,7 +499,10 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
           await navigator.clipboard.write([
             new ClipboardItem({ [blob.type]: blob })
           ]);
-          alert('¡Imagen COPIADA al portapapeles!\\n\\nTu navegador de PC no soporta envío directo. Ve a WhatsApp Web, abre el grupo y presiona Ctrl+V (Pegar) para enviarla.');
+          setMsg({ type: 'success', text: '¡Imagen copiada al portapapeles! Pégala (Ctrl+V) en el chat.' });
+          
+          const text = encodeURIComponent(`Aquí tienes el reporte de la actividad: ${actName}`);
+          window.open(`https://web.whatsapp.com/send?text=${text}`, '_blank');
         } catch (clipboardErr) {
           alert('Tu navegador no soporta copiado directo. Se descargará la imagen para que la envíes manualmente a WhatsApp.');
           exportImage(actId, actName);
