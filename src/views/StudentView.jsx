@@ -355,7 +355,10 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
               className="w-full border border-gray-300 rounded-lg p-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
             >
               <option value="">Selecciona una actividad...</option>
-              {activities.filter(act => act.Status !== 'paused').map(act => (
+              {activities.filter(act => 
+                act.Status !== 'paused' && 
+                !(globalData?.exemptions || []).some(e => e.StudentID === selectedStudent && e.ActivityID === act.ID)
+              ).map(act => (
                 <option key={act.ID} value={act.ID}>{act.Name} - S/ {act.Amount}</option>
               ))}
             </select>
