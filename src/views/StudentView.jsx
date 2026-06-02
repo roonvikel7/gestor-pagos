@@ -22,6 +22,11 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
   const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('app_student_auth') === 'true');
   const [isEditing, setIsEditing] = useState(false);
   
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState({ type: '', text: '' });
+  
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   const openImageModal = () => {
@@ -157,10 +162,41 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
       }
     } catch (err) {
       console.error(err);
-      setError('Ocurrió un error: ' + (err.message || 'Revisa tu conexión.'));
-    } finally {
-      setIsSubmitting(false);
+      setError('Error de red al enviar el comprobante.');
     }
+    setIsSubmitting(false);
+  };
+
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    if(newPassword.length !== 4 || currentPassword.length !== 4) return;
+    setIsUpdatingPassword(true);
+    setPasswordMsg({ type: '', text: '' });
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'updateStudentPassword',
+          studentId: selectedStudent,
+          currentPassword: currentPassword,
+          newPassword: newPassword
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        setPasswordMsg({ type: 'success', text: 'Contraseña actualizada exitosamente' });
+        setCurrentPassword('');
+        setNewPassword('');
+        setEnteredPassword(newPassword); 
+        fetchGlobalData();
+      } else {
+        setPasswordMsg({ type: 'error', text: data.message });
+      }
+    } catch (err) {
+      setPasswordMsg({ type: 'error', text: 'Error de red' });
+    }
+    setIsUpdatingPassword(false);
   };
 
   if (success) {
@@ -424,6 +460,53 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
               )}
             </button>
           )}
+        </form>
+      </div>
+
+      <div className="max-w-lg w-full bg-white rounded-2xl shadow-md p-6 sm:p-8 mt-6">
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Actualizar Contraseña</h3>
+        {enteredPassword === '1234' && (
+          <p className="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-lg mb-4 border border-yellow-200">
+            Estás usando la contraseña por defecto. Te recomendamos cambiarla por seguridad.
+          </p>
+        )}
+        
+        {passwordMsg.text && (
+          <div className={`p-3 rounded-lg mb-4 text-sm ${passwordMsg.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+            {passwordMsg.text}
+          </div>
+        )}
+
+        <form onSubmit={handleUpdatePassword} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña Actual (4 caracteres)</label>
+            <input 
+              type="password" 
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value.toUpperCase())}
+              maxLength={4}
+              placeholder="****"
+              className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono tracking-widest text-center"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña (4 caracteres)</label>
+            <input 
+              type="password" 
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value.toUpperCase())}
+              maxLength={4}
+              placeholder="****"
+              className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono tracking-widest text-center"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isUpdatingPassword || newPassword.length !== 4 || currentPassword.length !== 4}
+            className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold p-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+          >
+            {isUpdatingPassword ? 'Actualizando...' : 'Cambiar Contraseña'}
+          </button>
         </form>
       </div>
 

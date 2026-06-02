@@ -6,6 +6,5 @@ export const PASSWORD_WORDS = [
 ];
 
 export const getRandomPassword = () => {
-  const index = Math.floor(Math.random() * PASSWORD_WORDS.length);
-  return PASSWORD_WORDS[index];
+  return "1234";
 };

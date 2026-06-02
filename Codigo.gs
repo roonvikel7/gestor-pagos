@@ -256,12 +256,71 @@ function doPost(e) {
         return createErrorResponse('Activity not found');
       }
       
+    } else if (action === 'updateStudentPassword') {
+      sheet = ss.getSheetByName('Students');
+      const idIdx = getColumnIndex(sheet, 'ID');
+      const passIdx = getColumnIndex(sheet, 'Password');
+      const passTimeIdx = getColumnIndex(sheet, 'PasswordTimestamp');
+      
+      const values = sheet.getDataRange().getValues();
+      let rowIndex = -1;
+      for (let i = 1; i < values.length; i++) {
+        if (values[i][idIdx] === data.studentId && values[i][passIdx] === data.currentPassword) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+      
+      if (rowIndex !== -1) {
+        sheet.getRange(rowIndex, passIdx + 1).setValue(data.newPassword);
+        sheet.getRange(rowIndex, passTimeIdx + 1).setValue(new Date().toISOString());
+        return createSuccessResponse({ updated: true });
+      } else {
+        return createErrorResponse('Contraseña actual incorrecta');
+      }
+      
+    } else if (action === 'adminUpdateStudentPassword') {
+      sheet = ss.getSheetByName('Students');
+      const idIdx = getColumnIndex(sheet, 'ID');
+      const passIdx = getColumnIndex(sheet, 'Password');
+      const passTimeIdx = getColumnIndex(sheet, 'PasswordTimestamp');
+      
+      const values = sheet.getDataRange().getValues();
+      let rowIndex = -1;
+      for (let i = 1; i < values.length; i++) {
+        if (values[i][idIdx] === data.studentId) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+      
+      if (rowIndex !== -1) {
+        sheet.getRange(rowIndex, passIdx + 1).setValue(data.newPassword);
+        sheet.getRange(rowIndex, passTimeIdx + 1).setValue(new Date().toISOString());
+        return createSuccessResponse({ updated: true });
+      } else {
+        return createErrorResponse('Estudiante no encontrado');
+      }
+      
     } else {
-      return createErrorResponse('Invalid action');
+      return createErrorResponse('Action not supported');
     }
     
-  } catch (error) {
-    return createErrorResponse(error.toString());
+  } catch (err) {
+    return createErrorResponse(err.toString());
+  }
+}
+
+function migrarContrasenas1234() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Students');
+  if (!sheet) return;
+  const passIdx = getColumnIndex(sheet, 'Password');
+  const passTimeIdx = getColumnIndex(sheet, 'PasswordTimestamp');
+  const values = sheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    sheet.getRange(i + 1, passIdx + 1).setValue('1234');
+    sheet.getRange(i + 1, passTimeIdx + 1).setValue(new Date().toISOString());
   }
 }
 

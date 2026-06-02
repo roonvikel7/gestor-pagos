@@ -80,6 +80,12 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
   const [selectedActForExemption, setSelectedActForExemption] = useState(null);
   const [exemptionStudentId, setExemptionStudentId] = useState('');
   const [exemptionReason, setExemptionReason] = useState('');
+  
+  // Password Reset Modal State
+  const [resetModalStudent, setResetModalStudent] = useState(null);
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [newStudentPassword, setNewStudentPassword] = useState('');
+  const [resetPasswordError, setResetPasswordError] = useState('');
 
   // Form States
   const [newActivityName, setNewActivityName] = useState('');
@@ -170,6 +176,47 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       }
     } catch(err) {
       setDeleteError('Error de red al eliminar actividad');
+    }
+    setIsSubmitting(false);
+  };
+  
+  const handleAdminResetPassword = async (e) => {
+    e.preventDefault();
+    if (adminPasswordInput !== '9999') {
+      setResetPasswordError('Contraseña de administrador incorrecta.');
+      return;
+    }
+    if (newStudentPassword.length !== 4) {
+      setResetPasswordError('La nueva contraseña debe tener exactamente 4 caracteres.');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setMsg({ type: '', text: '' });
+    setResetPasswordError('');
+    
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'adminUpdateStudentPassword',
+          studentId: resetModalStudent.ID,
+          newPassword: newStudentPassword.toUpperCase()
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        setMsg({ type: 'success', text: `Contraseña de ${resetModalStudent.Name} actualizada.` });
+        setResetModalStudent(null);
+        setAdminPasswordInput('');
+        setNewStudentPassword('');
+        fetchGlobalData();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    } catch(err) {
+      alert('Error de red al cambiar la contraseña.');
     }
     setIsSubmitting(false);
   };
@@ -1008,14 +1055,16 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                   <thead className="bg-gray-50 text-gray-600 font-semibold border-b">
                     <tr>
                       <th className="p-3 border-r">Nombres</th>
-                      <th className="p-3 text-center w-32">Contraseña (4 letras)</th>
+                      <th className="p-3 text-center w-32 border-r">Contraseña</th>
+                      <th className="p-3 text-center">Última Modificación</th>
+                      <th className="p-3 text-center w-16">Acción</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {students.sort((a,b)=>(a.Name||'').localeCompare(b.Name||'')).map(s => (
                       <tr key={s.ID} className="hover:bg-gray-50">
                         <td className="p-3 border-r font-medium text-gray-900">{s.Name}</td>
-                        <td className="p-3 text-center">
+                        <td className="p-3 border-r text-center">
                           {s.Password ? (
                             <span className="font-mono bg-indigo-50 text-indigo-700 font-bold px-2 py-1 rounded tracking-wider">
                               {s.Password}
@@ -1024,10 +1073,27 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                             <span className="text-gray-400 italic text-xs">Sin contraseña</span>
                           )}
                         </td>
+                        <td className="p-3 text-center text-gray-500 text-xs">
+                          {s.PasswordTimestamp ? new Date(s.PasswordTimestamp).toLocaleString() : 'N/A'}
+                        </td>
+                        <td className="p-3 text-center">
+                          <button 
+                            onClick={() => {
+                              setResetModalStudent(s);
+                              setAdminPasswordInput('');
+                              setNewStudentPassword('');
+                              setResetPasswordError('');
+                            }}
+                            className="text-indigo-600 hover:text-indigo-800 transition"
+                            title="Modificar Contraseña"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                          </button>
+                        </td>
                       </tr>
                     ))}
                     {students.length === 0 && (
-                      <tr><td colSpan="2" className="p-4 text-center text-gray-500">No hay alumnos</td></tr>
+                      <tr><td colSpan="4" className="p-4 text-center text-gray-500">No hay alumnos</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -1186,6 +1252,61 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Reset Password Modal */}
+      {resetModalStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">Modificar Contraseña</h3>
+              <button onClick={() => setResetModalStudent(null)} className="text-gray-500 hover:text-gray-800">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Cambiarás la contraseña del estudiante <strong>{resetModalStudent.Name}</strong>.
+            </p>
+            
+            {resetPasswordError && (
+              <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">
+                {resetPasswordError}
+              </div>
+            )}
+            
+            <form onSubmit={handleAdminResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tu PIN de Administrador</label>
+                <input 
+                  type="password" 
+                  value={adminPasswordInput}
+                  onChange={(e) => setAdminPasswordInput(e.target.value)}
+                  className="w-full border rounded-lg p-2 bg-gray-50 outline-none text-center tracking-widest text-lg"
+                  placeholder="****"
+                  maxLength={4}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña (Estudiante)</label>
+                <input 
+                  type="text" 
+                  value={newStudentPassword}
+                  onChange={(e) => setNewStudentPassword(e.target.value.toUpperCase())}
+                  className="w-full border rounded-lg p-2 bg-gray-50 outline-none text-center font-mono tracking-widest uppercase text-lg"
+                  placeholder="****"
+                  maxLength={4}
+                />
+              </div>
+              <button 
+                type="submit" 
+                disabled={isSubmitting || adminPasswordInput.length !== 4 || newStudentPassword.length !== 4}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-lg font-bold transition disabled:opacity-50"
+              >
+                {isSubmitting ? 'Guardando...' : 'Confirmar Cambio'}
+              </button>
+            </form>
           </div>
         </div>
       )}
