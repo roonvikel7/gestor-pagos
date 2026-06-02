@@ -623,7 +623,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       const file = new File([blob], `Control_${actName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
 
       const currentDate = new Date().toLocaleString('es-PE', { dateStyle: 'long', timeStyle: 'short' });
-      const customMessage = `Reporte de la actividad: ${actName}\nFecha y hora: ${currentDate}`;
+      const customMessage = `*Reporte de la actividad:*\n${actName}\n*Fecha y hora:*\n${currentDate}`;
 
       if (navigator.canShare && navigator.canShare({ files: [file] }) && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         // Soporte nativo para móviles o navegadores compatibles
