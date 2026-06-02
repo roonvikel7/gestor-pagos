@@ -660,6 +660,18 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     }
   };
 
+  const handleCopyActivityLink = async (act) => {
+    const message = `Paz y Bien compañeros(as),\n\nSe ha creado la presente actividad "${act.Name}", donde estamos recaudando el monto de "${act.Amount} soles" por cada estudiante. Esperamos del apoyo fraterno de cada uno de ustedes.\n\n${window.location.origin}/?view=student&actividad=${act.ID}`;
+    
+    try {
+      await navigator.clipboard.writeText(message);
+      setMsg({ type: 'success', text: `Enlace copiado. Redirigiendo a WhatsApp...` });
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    } catch (err) {
+      alert("Error al copiar el enlace. Tu navegador puede no soportarlo.");
+    }
+  };
+
   const shareToWhatsApp = async (actId, actName) => {
     try {
       const element = document.getElementById(`excel-report-${actId}`);
@@ -911,6 +923,12 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                         className="flex items-center gap-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg font-medium transition"
                       >
                         <CalendarClock size={16} /> Programar
+                      </button>
+                      <button 
+                        onClick={() => handleCopyActivityLink(act)}
+                        className="flex items-center gap-2 text-sm bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 px-3 py-2 rounded-lg font-medium transition"
+                      >
+                        <ClipboardCopy size={16} /> Copiar Enlace
                       </button>
                       <button 
                         onClick={() => { setSelectedActForExemption(act); setShowExemptionModal(true); }}
