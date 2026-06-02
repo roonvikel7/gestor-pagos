@@ -53,7 +53,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
 
   React.useEffect(() => {
     if (role === 'tesorera') {
-      const timer = setTimeout(() => setShowWelcome(false), 5000);
+      const timer = setTimeout(() => setShowWelcome(false), 2500);
       return () => clearTimeout(timer);
     }
   }, [role]);
@@ -670,7 +670,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     <div className="min-h-screen bg-gray-50 flex flex-col relative">
       {/* Floating Welcome (Fixed and Pastel) */}
       {showWelcome && role === 'tesorera' && treasurerName && (
-        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 bg-indigo-50 border border-indigo-200 text-indigo-700 px-6 py-3 rounded-full shadow-lg z-50 animate-bounce text-sm sm:text-base font-medium whitespace-nowrap">
+        <div className="fixed top-20 sm:top-6 left-1/2 transform -translate-x-1/2 bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-2 sm:px-6 sm:py-3 rounded-full shadow-lg z-50 animate-bounce text-xs sm:text-sm font-medium max-w-[90vw] truncate text-center">
           ¡Bienvenid{treasurerGender} Tesorer{treasurerGender} {treasurerName}!
         </div>
       )}
