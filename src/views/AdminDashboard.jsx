@@ -622,12 +622,15 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       const blob = await response.blob();
       const file = new File([blob], `Control_${actName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
 
+      const currentDate = new Date().toLocaleString('es-PE', { dateStyle: 'long', timeStyle: 'short' });
+      const customMessage = `Reporte de la actividad: ${actName}\nFecha y hora: ${currentDate}`;
+
       if (navigator.canShare && navigator.canShare({ files: [file] }) && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         // Soporte nativo para móviles o navegadores compatibles
         await navigator.share({
           files: [file],
           title: `Reporte de Pagos: ${actName}`,
-          text: `Aquí tienes el reporte de la actividad: ${actName}`
+          text: customMessage
         });
       } else {
         // Fallback para computadoras de escritorio (WhatsApp Web)
@@ -635,9 +638,9 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
           await navigator.clipboard.write([
             new ClipboardItem({ [blob.type]: blob })
           ]);
-          setMsg({ type: 'success', text: '¡Imagen copiada al portapapeles! Pégala (Ctrl+V) en el chat.' });
+          setMsg({ type: 'success', text: '¡Imagen copiada! Cuando se abra WhatsApp Web, haz click en el cuadro de mensaje y presiona "Ctrl + V" para pegar la imagen.' });
           
-          const text = encodeURIComponent(`Aquí tienes el reporte de la actividad: ${actName}`);
+          const text = encodeURIComponent(customMessage);
           window.open(`https://web.whatsapp.com/send?text=${text}`, '_blank');
         } catch (clipboardErr) {
           alert('Tu navegador no soporta copiado directo. Se descargará la imagen para que la envíes manualmente a WhatsApp.');
