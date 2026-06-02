@@ -6,6 +6,7 @@ import autoTable from 'jspdf-autotable';
 import * as htmlToImage from 'html-to-image';
 import ExcelReportTemplate from '../components/ExcelReportTemplate';
 import { getRandomPassword } from '../utils/passwords';
+import Select from 'react-select';
 
 export default function AdminDashboard({ setView, globalData, fetchGlobalData, scriptUrl, onLogout, role, highlightLogout }) {
   const [activeTab, setActiveTabState] = useState(() => {
@@ -1000,19 +1001,32 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                   <option value="a">Tesorera</option>
                   <option value="o">Tesorero</option>
                 </select>
-                <select 
-                  value={treasurerName}
-                  onChange={(e) => {
-                    setTreasurerName(e.target.value);
-                    localStorage.setItem('app_treasurer_name', e.target.value);
+                <Select
+                  value={students.sort((a,b)=>(a.Name||'').localeCompare(b.Name||'')).map(s => ({ value: s.Name, label: s.Name })).find(opt => opt.value === treasurerName) || null}
+                  onChange={(option) => {
+                    const val = option ? option.value : '';
+                    setTreasurerName(val);
+                    localStorage.setItem('app_treasurer_name', val);
                   }}
-                  className="flex-1 border rounded-xl p-3 bg-gray-50 outline-none w-full"
-                >
-                  <option value="">Selecciona al alumno...</option>
-                  {students.sort((a,b)=>(a.Name||'').localeCompare(b.Name||'')).map(s => (
-                    <option key={s.ID} value={s.Name}>{s.Name}</option>
-                  ))}
-                </select>
+                  options={students.sort((a,b)=>(a.Name||'').localeCompare(b.Name||'')).map(s => ({ value: s.Name, label: s.Name }))}
+                  placeholder="Selecciona o busca al alumno..."
+                  isClearable
+                  noOptionsMessage={() => "No se encontraron alumnos"}
+                  className="flex-1 text-left text-sm"
+                  styles={{
+                    control: (base, state) => ({
+                      ...base,
+                      padding: '2px',
+                      borderRadius: '0.75rem',
+                      borderColor: state.isFocused ? '#4f46e5' : '#e5e7eb',
+                      boxShadow: state.isFocused ? '0 0 0 2px rgba(79, 70, 229, 0.5)' : 'none',
+                      backgroundColor: '#f9fafb',
+                      '&:hover': {
+                        borderColor: state.isFocused ? '#4f46e5' : '#e5e7eb'
+                      }
+                    })
+                  }}
+                />
               </div>
             </div>
 

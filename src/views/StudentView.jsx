@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle, X, User, LogOut, CalendarClock, Lock } from 'lucide-react';
 import { compressImage } from '../utils/imageCompression';
 import ImageModal from '../components/ImageModal';
+import Select from 'react-select';
 
 export default function StudentView({ setView, globalData, fetchGlobalData, scriptUrl, highlightLogout }) {
   const [activities, setActivities] = useState([]);
@@ -252,16 +253,28 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
             <div className="text-left space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tu Nombre</label>
-                <select
-                  value={selectedStudent}
-                  onChange={handleStudentChange}
-                  className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                >
-                  <option value="">Selecciona tu nombre...</option>
-                  {students.sort((a,b) => (a.Name||'').localeCompare(b.Name||'')).map(std => (
-                    <option key={std.ID} value={std.ID}>{std.Name}</option>
-                  ))}
-                </select>
+                <Select
+                  value={students.sort((a,b) => (a.Name||'').localeCompare(b.Name||'')).map(std => ({ value: std.ID, label: std.Name })).find(opt => opt.value === selectedStudent) || null}
+                  onChange={(option) => handleStudentChange({ target: { value: option ? option.value : '' } })}
+                  options={students.sort((a,b) => (a.Name||'').localeCompare(b.Name||'')).map(std => ({ value: std.ID, label: std.Name }))}
+                  placeholder="Selecciona o busca tu nombre..."
+                  isClearable
+                  noOptionsMessage={() => "No se encontraron alumnos"}
+                  className="text-left text-sm"
+                  styles={{
+                    control: (base, state) => ({
+                      ...base,
+                      padding: '4px',
+                      borderRadius: '0.5rem',
+                      borderColor: state.isFocused ? '#3b82f6' : '#d1d5db',
+                      boxShadow: state.isFocused ? '0 0 0 2px rgba(59, 130, 246, 0.5)' : 'none',
+                      backgroundColor: '#f9fafb',
+                      '&:hover': {
+                        borderColor: state.isFocused ? '#3b82f6' : '#d1d5db'
+                      }
+                    })
+                  }}
+                />
               </div>
 
               {selectedStudent && (
