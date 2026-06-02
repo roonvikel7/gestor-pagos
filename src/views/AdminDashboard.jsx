@@ -7,7 +7,7 @@ import * as htmlToImage from 'html-to-image';
 import ExcelReportTemplate from '../components/ExcelReportTemplate';
 import { getRandomPassword } from '../utils/passwords';
 
-export default function AdminDashboard({ setView, globalData, fetchGlobalData, scriptUrl, onLogout, role }) {
+export default function AdminDashboard({ setView, globalData, fetchGlobalData, scriptUrl, onLogout, role, highlightLogout }) {
   const [activeTab, setActiveTabState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('tab') || 'pagos';
@@ -695,7 +695,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
           </button>
           <button 
             onClick={onLogout} 
-            className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition flex items-center justify-center"
+            className={`p-2 rounded-full transition flex items-center justify-center ${highlightLogout ? 'bg-red-600 text-white animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.6)]' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
             title="Cerrar Sesión"
           >
             <LogOut size={20} />

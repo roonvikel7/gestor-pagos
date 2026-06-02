@@ -3,7 +3,7 @@ import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCi
 import { compressImage } from '../utils/imageCompression';
 import ImageModal from '../components/ImageModal';
 
-export default function StudentView({ setView, globalData, fetchGlobalData, scriptUrl }) {
+export default function StudentView({ setView, globalData, fetchGlobalData, scriptUrl, highlightLogout }) {
   const [activities, setActivities] = useState([]);
   const [students, setStudents] = useState([]);
   
@@ -270,7 +270,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
       <div className="w-full max-w-lg flex justify-between items-center mb-6 gap-3">
         <button 
           onClick={() => { setIsAuthenticated(false); setEnteredPassword(''); localStorage.removeItem('app_student_auth'); setView('home'); }}
-          className="flex-shrink-0 flex items-center text-red-600 hover:text-red-700 font-bold transition bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-sm border border-red-100 shadow-sm"
+          className={`flex-shrink-0 flex items-center font-bold transition px-3 py-1.5 rounded-lg text-sm border shadow-sm ${highlightLogout ? 'bg-red-600 text-white border-red-600 animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.6)]' : 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border-red-100'}`}
         >
           <LogOut size={16} className="mr-1.5" /> Salir
         </button>

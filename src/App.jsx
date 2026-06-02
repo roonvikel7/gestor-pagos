@@ -209,8 +209,8 @@ function App() {
   return (
     <>
       {showLogoutAlert && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl z-[9999] animate-bounce font-bold">
-          Debes cerrar sesión para salir de este panel.
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg z-[9999] text-sm font-medium animate-bounce">
+          Por favor, cierra sesión para salir.
         </div>
       )}
 
@@ -221,12 +221,12 @@ function App() {
       )}
 
       {view === 'home' && <Home setView={handleSetView} />}
-      {view === 'student' && <StudentView setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} />}
+      {view === 'student' && <StudentView setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} highlightLogout={showLogoutAlert} />}
       {view === 'admin-login' && <AdminLogin setView={handleSetView} onLogin={handleAdminLogin} requiredRole="tesorera" />}
       {view === 'super-login' && <AdminLogin setView={handleSetView} onLogin={handleAdminLogin} requiredRole="admin" />}
       {view === 'admin-dashboard' && (
         isAuthenticated ? (
-          <AdminDashboard setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} onLogout={handleLogout} role={userRole} />
+          <AdminDashboard setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} onLogout={handleLogout} role={userRole} highlightLogout={showLogoutAlert} />
         ) : (
           <Home setView={handleSetView} />
         )
