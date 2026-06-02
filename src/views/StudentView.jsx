@@ -118,7 +118,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
 
   const handleVerifyPassword = () => {
     const studentObj = students.find(s => s.ID === selectedStudent);
-    if (studentObj && studentObj.Password && studentObj.Password.toUpperCase() === enteredPassword) {
+    if (studentObj && studentObj.Password && String(studentObj.Password).toUpperCase() === enteredPassword) {
       setIsAuthenticated(true);
       setPasswordError(false);
       localStorage.setItem('app_student_auth', 'true');
