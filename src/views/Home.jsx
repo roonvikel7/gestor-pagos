@@ -24,7 +24,7 @@ export default function Home({ setView }) {
             className="w-full flex items-center justify-center gap-3 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 p-4 rounded-xl font-semibold transition"
           >
             <ShieldCheck size={24} />
-            Soy Tesorera
+            Soy Delegada / Tesorera
           </button>
         </div>
       </div>

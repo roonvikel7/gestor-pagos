@@ -302,6 +302,33 @@ function doPost(e) {
         return createErrorResponse('Estudiante no encontrado');
       }
       
+    } else if (action === 'verifyRolePassword') {
+      const props = PropertiesService.getScriptProperties();
+      const role = data.role; // 'admin' or 'tesorera'
+      const defaultPass = role === 'admin' ? '9999' : '2627';
+      const storedPass = props.getProperty(role + 'Password') || defaultPass;
+      
+      if (storedPass === data.password) {
+        return createSuccessResponse({ valid: true });
+      } else {
+        return createSuccessResponse({ valid: false });
+      }
+      
+    } else if (action === 'updateRolePassword') {
+      const props = PropertiesService.getScriptProperties();
+      const role = data.role; // 'admin' or 'tesorera'
+      
+      // Verify old password
+      const defaultPass = role === 'admin' ? '9999' : '2627';
+      const storedPass = props.getProperty(role + 'Password') || defaultPass;
+      
+      if (storedPass !== data.oldPassword) {
+        return createErrorResponse('Contraseña actual incorrecta');
+      }
+      
+      props.setProperty(role + 'Password', data.newPassword);
+      return createSuccessResponse({ updated: true });
+      
     } else {
       return createErrorResponse('Action not supported');
     }

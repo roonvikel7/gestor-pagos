@@ -222,8 +222,8 @@ function App() {
 
       {view === 'home' && <Home setView={handleSetView} />}
       {view === 'student' && <StudentView setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} highlightLogout={showLogoutAlert} />}
-      {view === 'admin-login' && <AdminLogin setView={handleSetView} onLogin={handleAdminLogin} requiredRole="tesorera" />}
-      {view === 'super-login' && <AdminLogin setView={handleSetView} onLogin={handleAdminLogin} requiredRole="admin" />}
+      {view === 'admin-login' && <AdminLogin setView={handleSetView} onLogin={handleAdminLogin} requiredRole="tesorera" scriptUrl={SCRIPT_URL} />}
+      {view === 'super-login' && <AdminLogin setView={handleSetView} onLogin={handleAdminLogin} requiredRole="admin" scriptUrl={SCRIPT_URL} />}
       {view === 'admin-dashboard' && (
         isAuthenticated ? (
           <AdminDashboard setView={handleSetView} globalData={globalData} fetchGlobalData={fetchGlobalData} scriptUrl={SCRIPT_URL} onLogout={handleLogout} role={userRole} highlightLogout={showLogoutAlert} />

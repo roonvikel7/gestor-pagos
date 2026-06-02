@@ -1,20 +1,41 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Lock, ArrowRight } from 'lucide-react';
 
-export default function AdminLogin({ setView, onLogin, requiredRole = 'tesorera' }) {
+export default function AdminLogin({ setView, onLogin, requiredRole = 'tesorera', scriptUrl }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (requiredRole === 'tesorera' && pin === '2627') {
-      onLogin('tesorera');
-    } else if (requiredRole === 'admin' && pin === '9999') {
-      onLogin('admin');
-    } else {
+    if (!pin) return;
+    setIsSubmitting(true);
+    setError(false);
+    
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'verifyRolePassword',
+          role: requiredRole,
+          password: pin
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success' && data.data.valid) {
+        onLogin(requiredRole);
+      } else {
+        setError(true);
+        setPin('');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error de red al verificar la contraseña.');
       setError(true);
       setPin('');
     }
+    setIsSubmitting(false);
   };
 
   return (
@@ -53,10 +74,11 @@ export default function AdminLogin({ setView, onLogin, requiredRole = 'tesorera'
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 transition"
+              disabled={isSubmitting}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-4 rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-70"
             >
-              Ingresar
-              <ArrowRight size={20} />
+              {isSubmitting ? 'Verificando...' : 'Ingresar'}
+              {!isSubmitting && <ArrowRight size={20} />}
             </button>
           </form>
         </div>

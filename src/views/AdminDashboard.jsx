@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut, Cake, Trash2, CalendarClock } from 'lucide-react';
+import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut, Cake, Trash2, CalendarClock, Lock } from 'lucide-react';
 import ImageModal from '../components/ImageModal';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -23,10 +23,10 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     window.history.pushState({}, '', url);
   };
 
-  const tabs = role === 'admin' ? ['pagos', 'actividades', 'alumnos'] : ['pagos', 'actividades'];
+  const tabs = role === 'admin' ? ['pagos', 'actividades', 'alumnos', 'seguridad'] : ['pagos', 'actividades', 'seguridad'];
 
   React.useEffect(() => {
-    if (role === 'tesorera' && activeTab === 'alumnos') {
+    if (role === 'tesorera' && (activeTab === 'alumnos' || activeTab === 'seguridad' && false)) {
       setActiveTab('pagos');
     }
   }, [role, activeTab]);
@@ -48,17 +48,9 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
   }, []);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(true);
   const [treasurerName, setTreasurerName] = useState(() => localStorage.getItem('app_treasurer_name') || '');
   const [treasurerGender, setTreasurerGender] = useState(() => localStorage.getItem('app_treasurer_gender') || 'a');
 
-  React.useEffect(() => {
-    if (role === 'tesorera') {
-      const timer = setTimeout(() => setShowWelcome(false), 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [role]);
-  
   // Modals (moved up)
 
   const openImageModal = (image) => {
@@ -88,6 +80,11 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
   const [newStudentPassword, setNewStudentPassword] = useState('');
   const [resetPasswordError, setResetPasswordError] = useState('');
 
+  // Security State
+  const [currentTreasurerPass, setCurrentTreasurerPass] = useState('');
+  const [newTreasurerPass, setNewTreasurerPass] = useState('');
+  const [securityMsg, setSecurityMsg] = useState({ type: '', text: '' });
+
   // Form States
   const [newActivityName, setNewActivityName] = useState('');
   const [newActivityAmount, setNewActivityAmount] = useState('');
@@ -115,6 +112,34 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     setIsRefreshing(true);
     await fetchGlobalData();
     setIsRefreshing(false);
+  };
+
+  const handleUpdateTreasurerPassword = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'updateRolePassword',
+          role: role,
+          oldPassword: currentTreasurerPass,
+          newPassword: newTreasurerPass
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        setSecurityMsg({ type: 'success', text: 'Contraseña actualizada correctamente' });
+        setCurrentTreasurerPass('');
+        setNewTreasurerPass('');
+      } else {
+        setSecurityMsg({ type: 'error', text: data.message });
+      }
+    } catch(err) {
+      setSecurityMsg({ type: 'error', text: 'Error de red' });
+    }
+    setIsSubmitting(false);
   };
 
   const handleAddActivity = async (e) => {
@@ -728,13 +753,6 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col relative">
-      {/* Floating Welcome (Fixed and Pastel) */}
-      {showWelcome && role === 'tesorera' && treasurerName && (
-        <div className="fixed top-20 sm:top-6 left-1/2 transform -translate-x-1/2 bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-2 sm:px-6 sm:py-3 rounded-full shadow-lg z-50 animate-bounce text-xs sm:text-sm font-medium max-w-[90vw] truncate text-center">
-          ¡Bienvenid{treasurerGender} Tesorer{treasurerGender} {treasurerName}!
-        </div>
-      )}
-
       {/* Header */}
       <header className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -742,7 +760,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
             <ArrowLeft size={20} />
           </button>
           <h1 className="text-xl font-bold text-gray-900">
-            {role === 'admin' ? 'Panel Administrador' : 'Panel Tesorera'}
+            {role === 'admin' ? 'Panel Administrador' : 'Panel Delegada / Tesorera'}
           </h1>
         </div>
         <div className="flex items-center gap-2">
@@ -1202,6 +1220,57 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                 })}
               </ul>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Seguridad Tab */}
+      {activeTab === 'seguridad' && (
+        <div className="max-w-md mx-auto space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Lock size={20} className="text-indigo-600" /> Seguridad de Acceso
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">Actualiza el PIN o contraseña de acceso para tu rol de {role === 'admin' ? 'Administrador' : 'Delegada / Tesorera'}.</p>
+            
+            {securityMsg.text && (
+              <div className={`p-4 rounded-lg mb-6 text-sm font-medium ${securityMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                {securityMsg.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleUpdateTreasurerPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña Actual</label>
+                <input
+                  type="password"
+                  value={currentTreasurerPass}
+                  onChange={(e) => { setCurrentTreasurerPass(e.target.value); setSecurityMsg({type: '', text: ''}); }}
+                  className="w-full border rounded-xl p-3 bg-gray-50 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña</label>
+                <input
+                  type="password"
+                  value={newTreasurerPass}
+                  onChange={(e) => { setNewTreasurerPass(e.target.value); setSecurityMsg({type: '', text: ''}); }}
+                  className="w-full border rounded-xl p-3 bg-gray-50 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  required
+                  maxLength={4}
+                  placeholder="Mínimo 4 caracteres (ej. 1234)"
+                />
+                <p className="text-xs text-gray-500 mt-1">La nueva contraseña reemplazará a tu acceso actual.</p>
+              </div>
+              <button 
+                type="submit" 
+                disabled={isSubmitting || newTreasurerPass.length !== 4}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-3 rounded-xl transition disabled:opacity-50"
+              >
+                {isSubmitting ? 'Actualizando...' : 'Actualizar Contraseña'}
+              </button>
+            </form>
           </div>
         </div>
       )}
