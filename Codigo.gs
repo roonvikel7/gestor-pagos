@@ -265,7 +265,7 @@ function doPost(e) {
       const values = sheet.getDataRange().getValues();
       let rowIndex = -1;
       for (let i = 1; i < values.length; i++) {
-        if (values[i][idIdx] === data.studentId && values[i][passIdx] === data.currentPassword) {
+        if (values[i][idIdx] === data.studentId && String(values[i][passIdx]) === data.currentPassword) {
           rowIndex = i + 1;
           break;
         }

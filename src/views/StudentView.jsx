@@ -26,6 +26,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
   const [newPassword, setNewPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState({ type: '', text: '' });
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
@@ -64,8 +65,15 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
     if (globalData) {
       setActivities(globalData.activities || []);
       setStudents(globalData.students || []);
+      
+      if (selectedStudent && globalData.students) {
+        const sObj = globalData.students.find(s => s.ID === selectedStudent);
+        if (sObj && String(sObj.Password) === '1234') {
+          setShowPasswordForm(true);
+        }
+      }
     }
-  }, [globalData]);
+  }, [globalData, selectedStudent]);
 
   // Check URL params and handle popstate for browser history
   useEffect(() => {
@@ -464,20 +472,34 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
       </div>
 
       <div className="max-w-lg w-full bg-white rounded-2xl shadow-md p-6 sm:p-8 mt-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-2">Actualizar Contraseña</h3>
-        {enteredPassword === '1234' && (
-          <p className="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-lg mb-4 border border-yellow-200">
-            Estás usando la contraseña por defecto. Te recomendamos cambiarla por seguridad.
-          </p>
-        )}
-        
-        {passwordMsg.text && (
-          <div className={`p-3 rounded-lg mb-4 text-sm ${passwordMsg.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-            {passwordMsg.text}
+        <div 
+          className="flex justify-between items-center cursor-pointer"
+          onClick={() => setShowPasswordForm(!showPasswordForm)}
+        >
+          <div className="flex items-center gap-2 text-gray-900">
+            <Lock size={20} className="text-gray-500" />
+            <h3 className="text-lg font-bold">Seguridad</h3>
           </div>
-        )}
+          <button className="text-blue-600 font-medium text-sm hover:underline">
+            {showPasswordForm ? 'Ocultar' : 'Cambiar Contraseña'}
+          </button>
+        </div>
 
-        <form onSubmit={handleUpdatePassword} className="space-y-4">
+        {showPasswordForm && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            {String(students.find(s => s.ID === selectedStudent)?.Password) === '1234' && (
+              <p className="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-lg mb-4 border border-yellow-200">
+                Estás usando la contraseña por defecto. Te recomendamos cambiarla por seguridad.
+              </p>
+            )}
+            
+            {passwordMsg.text && (
+              <div className={`p-3 rounded-lg mb-4 text-sm ${passwordMsg.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                {passwordMsg.text}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña Actual (4 caracteres)</label>
             <input 
@@ -500,14 +522,16 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
               className="w-full border border-gray-300 rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono tracking-widest text-center"
             />
           </div>
-          <button
-            type="submit"
-            disabled={isUpdatingPassword || newPassword.length !== 4 || currentPassword.length !== 4}
-            className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold p-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-          >
-            {isUpdatingPassword ? 'Actualizando...' : 'Cambiar Contraseña'}
-          </button>
-        </form>
+              <button
+                type="submit"
+                disabled={isUpdatingPassword || newPassword.length !== 4 || currentPassword.length !== 4}
+                className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold p-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              >
+                {isUpdatingPassword ? 'Actualizando...' : 'Cambiar Contraseña'}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       {isImageModalOpen && (
