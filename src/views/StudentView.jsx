@@ -363,14 +363,14 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
       {/* --- DASHBOARD SUMMARY --- */}
       <div className="max-w-lg w-full flex gap-4 mb-6">
         <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm border text-center">
-          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Aportado</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">S/ {
+          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Actividades Pagadas</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">{
             activities.filter(act => 
               act.Status !== 'paused' && 
               !(globalData?.exemptions || []).some(e => e.StudentID === selectedStudent && e.ActivityID === act.ID)
             ).filter(act => (globalData?.payments || []).some(p => p.StudentID === selectedStudent && p.ActivityID === act.ID))
-             .reduce((sum, act) => sum + Number(act.Amount || 0), 0)
-          }.00</p>
+             .length
+          }</p>
         </div>
         <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm border text-center">
           <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Pendientes</p>
@@ -416,11 +416,21 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                   act.Status !== 'paused' && 
                   !(globalData?.exemptions || []).some(e => e.StudentID === selectedStudent && e.ActivityID === act.ID)
                 ).filter(act => (globalData?.payments || []).some(p => p.StudentID === selectedStudent && p.ActivityID === act.ID)).map(act => {
+                  const payment = (globalData?.payments || []).find(p => p.StudentID === selectedStudent && p.ActivityID === act.ID);
+                  let dateStr = '';
+                  if (payment && payment.Timestamp) {
+                    const d = new Date(payment.Timestamp);
+                    if (!isNaN(d)) {
+                      dateStr = d.toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
+                    }
+                  }
+                  
                   return (
                     <div key={act.ID} className="border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-sm transition">
                       <div>
                         <h4 className="font-bold text-gray-900">{act.Name}</h4>
                         <p className="text-sm text-green-600 font-medium mt-1">S/ {act.Amount} - Pagado</p>
+                        {dateStr && <p className="text-xs text-gray-500 mt-1">Enviado: {dateStr}</p>}
                       </div>
                       <button 
                         onClick={() => { setSelectedActivity(act.ID); openImageModal(act.ID); }}
