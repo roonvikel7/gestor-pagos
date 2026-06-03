@@ -30,7 +30,7 @@ function doGet(e) {
   }
   
   const paymentsData = getSheetData('Payments').map(p => {
-    delete p.ImageBase64; // Removido para ahorrar datos
+    delete p.ImageBase64;
     return p;
   });
 
@@ -333,10 +333,12 @@ function doPost(e) {
       
       props.setProperty(role + 'Password', data.newPassword);
       return createSuccessResponse({ updated: true });
-      
+
     } else if (action === 'getPaymentImage') {
       const sheet = ss.getSheetByName('Payments');
       const dataRange = sheet.getDataRange().getValues();
+      if (dataRange.length <= 1) return createSuccessResponse({ imageBase64: null });
+      
       const headers = dataRange[0];
       const stdIdx = headers.indexOf('StudentID');
       const actIdx = headers.indexOf('ActivityID');
