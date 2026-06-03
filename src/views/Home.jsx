@@ -1,7 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, ShieldCheck, Bot } from 'lucide-react';
 
 export default function Home({ setView }) {
+  const [adminClicks, setAdminClicks] = useState(0);
+
+  useEffect(() => {
+    if (adminClicks > 0 && adminClicks < 3) {
+      const timer = setTimeout(() => setAdminClicks(0), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [adminClicks]);
+
+  const handleAdminClick = () => {
+    if (adminClicks + 1 >= 3) {
+      setView('super-login');
+      setAdminClicks(0);
+    } else {
+      setAdminClicks(prev => prev + 1);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl space-y-8 text-center">
@@ -29,11 +47,11 @@ export default function Home({ setView }) {
         </div>
       </div>
 
-      {/* Floating Robot Icon for Super Admin */}
+      {/* Floating Robot Icon for Super Admin (Secret 3 Clicks) */}
       <button
-        onClick={() => setView('super-login')}
+        onClick={handleAdminClick}
         className="fixed bottom-6 right-6 bg-white p-4 rounded-full shadow-2xl text-indigo-600 hover:scale-110 hover:bg-indigo-50 transition border border-indigo-100 z-50 flex items-center justify-center"
-        title="Panel Administrador"
+        title="Admin"
       >
         <Bot size={28} />
       </button>
