@@ -366,7 +366,6 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
           <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Actividades Pagadas</p>
           <p className="text-2xl font-bold text-green-600 mt-1">{
             activities.filter(act => 
-              act.Status !== 'paused' && 
               !(globalData?.exemptions || []).some(e => e.StudentID === selectedStudent && e.ActivityID === act.ID)
             ).filter(act => (globalData?.payments || []).some(p => p.StudentID === selectedStudent && p.ActivityID === act.ID))
              .length
@@ -406,14 +405,12 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
           <div>
             <h3 className="text-xl font-bold text-gray-900 mb-6">Actividades Pagadas</h3>
             {activities.filter(act => 
-              act.Status !== 'paused' && 
               !(globalData?.exemptions || []).some(e => e.StudentID === selectedStudent && e.ActivityID === act.ID)
             ).filter(act => (globalData?.payments || []).some(p => p.StudentID === selectedStudent && p.ActivityID === act.ID)).length === 0 ? (
               <p className="text-gray-500 text-center py-8">Aún no tienes pagos registrados en el historial.</p>
             ) : (
               <div className="space-y-4">
                 {activities.filter(act => 
-                  act.Status !== 'paused' && 
                   !(globalData?.exemptions || []).some(e => e.StudentID === selectedStudent && e.ActivityID === act.ID)
                 ).filter(act => (globalData?.payments || []).some(p => p.StudentID === selectedStudent && p.ActivityID === act.ID)).map(act => {
                   const payment = (globalData?.payments || []).find(p => p.StudentID === selectedStudent && p.ActivityID === act.ID);
