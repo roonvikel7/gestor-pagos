@@ -29,12 +29,17 @@ function doGet(e) {
     setup();
   }
   
+  const paymentsData = getSheetData('Payments').map(p => {
+    delete p.ImageBase64; // Removido para ahorrar datos
+    return p;
+  });
+
   const response = {
     status: 'success',
     data: {
       students: getSheetData('Students'),
       activities: getSheetData('Activities'),
-      payments: getSheetData('Payments'),
+      payments: paymentsData,
       exemptions: getSheetData('Exemptions')
     }
   };
@@ -329,6 +334,23 @@ function doPost(e) {
       props.setProperty(role + 'Password', data.newPassword);
       return createSuccessResponse({ updated: true });
       
+    } else if (action === 'getPaymentImage') {
+      const sheet = ss.getSheetByName('Payments');
+      const dataRange = sheet.getDataRange().getValues();
+      const headers = dataRange[0];
+      const stdIdx = headers.indexOf('StudentID');
+      const actIdx = headers.indexOf('ActivityID');
+      const imgIdx = headers.indexOf('ImageBase64');
+      
+      let base64 = null;
+      for (let i = 1; i < dataRange.length; i++) {
+        if (dataRange[i][stdIdx] === data.studentId && dataRange[i][actIdx] === data.activityId) {
+          base64 = dataRange[i][imgIdx];
+          break;
+        }
+      }
+      return createSuccessResponse({ imageBase64: base64 });
+
     } else {
       return createErrorResponse('Action not supported');
     }
