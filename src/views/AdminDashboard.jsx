@@ -138,6 +138,17 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
   
   const [activitySubTab, setActivitySubTab] = useState('vigentes');
 
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('[data-dropdown]')) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const activities = globalData?.activities || [];
   const students = globalData?.students || [];
   const payments = globalData?.payments || [];
@@ -1076,7 +1087,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                         <WhatsAppIcon /> Reporte WA
                       </button>
                       {/* Dropdown Descargar Reportes */}
-                      <div className="relative">
+                      <div className="relative" data-dropdown>
                         <button 
                           onClick={() => setOpenDropdownId(openDropdownId === act.ID ? null : act.ID)}
                           className="flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg font-medium transition"
