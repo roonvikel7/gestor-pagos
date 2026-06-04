@@ -427,9 +427,15 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                     <div key={act.ID} className="border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-sm transition">
                       <div>
                         <h4 className="font-bold text-gray-900">{act.Name}</h4>
-                        <p className="text-sm text-green-600 font-medium mt-1">
-                          S/ {act.Amount} - Pagado {payment?.ImageBase64 === 'EFECTIVO' ? 'en Efectivo' : ''}
-                        </p>
+                        {payment?.ImageBase64 === 'EFECTIVO' ? (
+                          <p className="text-sm text-green-600 font-medium mt-1">
+                            S/ {act.Amount} - Pagado en Efectivo
+                          </p>
+                        ) : (
+                          <p className="text-sm text-purple-500 font-medium mt-1">
+                            S/ {act.Amount} - Pagado por Yape
+                          </p>
+                        )}
                         {dateStr && <p className="text-xs text-gray-500 mt-1">Registrado: {dateStr}</p>}
                       </div>
                       {payment?.ImageBase64 === 'EFECTIVO' ? (
