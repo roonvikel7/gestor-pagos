@@ -982,13 +982,13 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                             ) : null}
                           </h4>
                           <p className="text-xs text-gray-500 font-medium mb-1 mt-0.5">
-                            Creada el: {new Date(act.Timestamp || new Date()).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}
+                            Fecha de creación: {new Date(act.Timestamp || new Date()).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}
                           </p>
                           <p className="text-sm text-gray-700 mb-1">Monto: S/ {act.Amount}</p>
-                          {isClosed && act.Deadline ? (
+                          {isClosed ? (
                             <div className="mt-1 inline-flex items-center gap-1 text-red-400 text-xs font-semibold">
                               <CalendarClock size={12} />
-                              Cierre programado: {new Date(act.Deadline).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}
+                              Fecha de cierre: {act.Deadline ? new Date(act.Deadline).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' }) : 'Cierre manual'}
                             </div>
                           ) : act.Deadline ? (
                             <div className="mt-1.5 mb-1 inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-semibold shadow-sm">
@@ -1095,10 +1095,16 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
               );
 
               return (
-                <div className="space-y-6">
-                  {renderList(activeActs, false)}
+                <div className="space-y-8 mt-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span> Actividades Vigentes
+                    </h3>
+                    {renderList(activeActs, false)}
+                  </div>
+                  
                   {closedActs.length > 0 && (
-                    <div className="mt-8">
+                    <div>
                       <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-red-400"></span> Actividades Cerradas
                       </h3>
