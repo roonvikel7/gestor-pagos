@@ -998,10 +998,10 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
               const closedActs = sortedActivities.filter(act => (act.Status === 'paused' || (act.Deadline && new Date(act.Deadline) < new Date())));
               
               const renderList = (list, isClosed) => (
-                <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden ${isClosed ? 'opacity-80 grayscale-[20%]' : ''}`}>
+                <div className={`bg-white rounded-2xl shadow-sm border ${isClosed ? 'opacity-80 grayscale-[20%]' : ''}`}>
                   <ul className="divide-y">
                     {list.map(act => (
-                      <li key={act.ID} className={`p-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 transition gap-4 ${isClosed ? 'bg-gray-50/50' : ''}`}>
+                      <li key={act.ID} className={`p-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 transition gap-4 first:rounded-t-2xl last:rounded-b-2xl ${isClosed ? 'bg-gray-50/50' : ''}`}>
                         <div>
                           <h4 className="font-bold text-gray-900 flex items-center gap-2">
                             {act.Name}
