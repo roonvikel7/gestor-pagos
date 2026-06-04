@@ -207,6 +207,24 @@ function doPost(e) {
       sheet.appendRow([id, data.activityId, data.studentId, data.reason, new Date()]);
       return createSuccessResponse({ id: id, activityId: data.activityId, studentId: data.studentId });
       
+    } else if (action === 'removeExemption') {
+      sheet = ss.getSheetByName('Exemptions');
+      const values = sheet.getDataRange().getValues();
+      let rowIndex = -1;
+      // headers: ID, ActivityID, StudentID, Reason, Timestamp
+      for (let i = 1; i < values.length; i++) {
+        if (values[i][1] === data.activityId && values[i][2] === data.studentId) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+      if (rowIndex !== -1) {
+        sheet.deleteRow(rowIndex);
+        return createSuccessResponse({ removed: true, activityId: data.activityId, studentId: data.studentId });
+      } else {
+        return createErrorResponse('Exención no encontrada');
+      }
+      
     } else if (action === 'toggleActivityStatus') {
       sheet = ss.getSheetByName('Activities');
       const idIdx = getColumnIndex(sheet, 'ID');

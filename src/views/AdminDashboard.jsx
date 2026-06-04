@@ -396,6 +396,33 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     setIsSubmitting(false);
   };
 
+  const handleRemoveExemption = async (studentId) => {
+    if(!confirm('¿Estás segura de eliminar esta exoneración?')) return;
+    setIsSubmitting(true);
+    
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'removeExemption',
+          activityId: selectedActForExemption.ID,
+          studentId: studentId
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        alert('Exoneración eliminada');
+        fetchGlobalData();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    } catch(err) {
+      alert('Error de red al eliminar exoneración');
+    }
+    setIsSubmitting(false);
+  };
+
   const handleTogglePause = async (actId) => {
     setIsSubmitting(true);
     try {
@@ -1232,9 +1259,18 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                 {exemptions.filter(e => e.ActivityID === selectedActForExemption.ID).map(ex => {
                   const s = students.find(st => st.ID === ex.StudentID);
                   return (
-                    <li key={ex.ID} className="text-xs bg-gray-100 p-2 rounded flex justify-between">
-                      <span className="font-medium">{s?.Name || 'Desconocido'}</span>
-                      <span className="text-gray-500">{ex.Reason || 'Sin motivo'}</span>
+                    <li key={ex.ID} className="text-xs bg-gray-100 p-2 rounded flex justify-between items-center group">
+                      <div>
+                        <span className="font-medium block">{s?.Name || 'Desconocido'}</span>
+                        <span className="text-gray-500">{ex.Reason || 'Sin motivo'}</span>
+                      </div>
+                      <button 
+                        onClick={() => handleRemoveExemption(ex.StudentID)}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition"
+                        title="Eliminar exoneración"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </li>
                   );
                 })}
