@@ -988,20 +988,30 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <button 
-                        onClick={() => handleTogglePause(act.ID)}
-                        disabled={isSubmitting}
-                        className="flex items-center gap-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg font-medium transition disabled:opacity-50"
-                      >
-                        {act.Status === 'paused' ? <Play size={16} /> : <Pause size={16} />}
-                        {act.Status === 'paused' ? 'Reanudar' : 'Pausar'}
-                      </button>
-                      <button 
-                        onClick={() => { setActivityToSetDeadline(act); setDeadlineValue(act.Deadline || ''); setShowDeadlineModal(true); }}
-                        className="flex items-center gap-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg font-medium transition"
-                      >
-                        <CalendarClock size={16} /> Programar
-                      </button>
+                      {/* Compact State & Schedule Control */}
+                      <div className="flex items-center bg-white border shadow-sm rounded-lg p-1 mr-1">
+                        <button
+                          onClick={() => handleTogglePause(act.ID)}
+                          disabled={isSubmitting}
+                          title={act.Status === 'paused' ? 'Reanudar actividad' : 'Pausar actividad'}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${act.Status === 'paused' ? 'bg-gray-300' : 'bg-green-500'} mx-2`}
+                        >
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${act.Status === 'paused' ? 'translate-x-1' : 'translate-x-6'}`} />
+                        </button>
+                        <span className="text-xs font-bold text-gray-600 mr-2 w-14">
+                          {act.Status === 'paused' ? 'Pausada' : 'Activa'}
+                        </span>
+                        
+                        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+                        
+                        <button 
+                          onClick={() => { setActivityToSetDeadline(act); setDeadlineValue(act.Deadline || ''); setShowDeadlineModal(true); }}
+                          title="Programar cierre"
+                          className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-md transition ml-1"
+                        >
+                          <CalendarClock size={16} /> Cierre
+                        </button>
+                      </div>
                       <button 
                         onClick={() => handleCopyActivityLink(act)}
                         className="flex items-center gap-2 text-sm bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-2 rounded-lg font-medium transition shadow-sm"
