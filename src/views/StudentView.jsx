@@ -43,6 +43,10 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
     setInlineImage(null);
     const p = (globalData?.payments || []).find(pay => pay.StudentID === selectedStudent && pay.ActivityID === selectedActivity);
     if (p && p.ImageBase64 !== 'EFECTIVO') {
+      if (p.ImageBase64 && p.ImageBase64.length > 20) {
+        setInlineImage(p.ImageBase64);
+        return;
+      }
       setIsFetchingInline(true);
       fetch(scriptUrl, {
         method: 'POST',

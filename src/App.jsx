@@ -165,8 +165,10 @@ function App() {
         setIsLoading(false);
         return;
       }
+      const stId = localStorage.getItem('app_student_id');
+      const fetchUrl = stId ? `${SCRIPT_URL}?studentId=${encodeURIComponent(stId)}` : SCRIPT_URL;
       
-      const res = await fetch(SCRIPT_URL);
+      const res = await fetch(fetchUrl);
       const result = await res.json();
       if (result.status === 'success') {
         setGlobalData(result.data);
