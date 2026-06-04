@@ -135,6 +135,8 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
   const [deadlineValue, setDeadlineValue] = useState('');
   
   const [openDropdownId, setOpenDropdownId] = useState(null);
+  
+  const [activitySubTab, setActivitySubTab] = useState('vigentes');
 
   const activities = globalData?.activities || [];
   const students = globalData?.students || [];
@@ -1123,22 +1125,34 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
               );
 
               return (
-                <div className="space-y-8 mt-6">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-500"></span> Actividades Vigentes
-                    </h3>
-                    {renderList(activeActs, false)}
+                <div className="mt-6">
+                  {/* Sub-tabs para actividades */}
+                  <div className="flex border-b border-gray-200 mb-6">
+                    <button
+                      onClick={() => setActivitySubTab('vigentes')}
+                      className={`flex-1 py-3 font-semibold text-sm transition-colors border-b-2 ${activitySubTab === 'vigentes' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${activitySubTab === 'vigentes' ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                        Actividades Vigentes
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setActivitySubTab('cerradas')}
+                      className={`flex-1 py-3 font-semibold text-sm transition-colors border-b-2 ${activitySubTab === 'cerradas' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${activitySubTab === 'cerradas' ? 'bg-red-400' : 'bg-gray-300'}`}></span>
+                        Actividades Cerradas {closedActs.length > 0 ? `(${closedActs.length})` : ''}
+                      </div>
+                    </button>
                   </div>
-                  
-                  {closedActs.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-red-400"></span> Actividades Cerradas
-                      </h3>
-                      {renderList(closedActs, true)}
-                    </div>
-                  )}
+
+                  {/* Tab Content */}
+                  <div>
+                    {activitySubTab === 'vigentes' && renderList(activeActs, false)}
+                    {activitySubTab === 'cerradas' && renderList(closedActs, true)}
+                  </div>
                 </div>
               );
             })()}
