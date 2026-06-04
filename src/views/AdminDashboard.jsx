@@ -120,6 +120,8 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
   const [showDeadlineModal, setShowDeadlineModal] = useState(false);
   const [activityToSetDeadline, setActivityToSetDeadline] = useState(null);
   const [deadlineValue, setDeadlineValue] = useState('');
+  
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   const activities = globalData?.activities || [];
   const students = globalData?.students || [];
@@ -1000,29 +1002,42 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                         <UserMinus size={16} /> Exonerados
                       </button>
                       <button 
-                        onClick={() => exportExcelPDF(act.ID, act.Name, act.Amount)}
-                        className="flex items-center gap-2 text-sm bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 rounded-lg font-medium transition"
-                      >
-                        <FileSpreadsheet size={16} /> Resumen Excel
-                      </button>
-                      <button 
-                        onClick={() => exportImage(act.ID, act.Name)}
-                        className="flex items-center gap-2 text-sm bg-cyan-50 hover:bg-cyan-100 text-cyan-700 px-3 py-2 rounded-lg font-medium transition"
-                      >
-                        <ImageLucide size={16} /> Imagen PNG
-                      </button>
-                      <button 
                         onClick={() => shareToWhatsApp(act.ID, act.Name)}
                         className="flex items-center gap-2 text-sm bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-2 rounded-lg font-medium transition shadow-sm"
                       >
                         <MessageCircle size={16} /> WhatsApp
                       </button>
-                      <button 
-                        onClick={() => exportPDF(act.ID, act.Name)}
-                        className="flex items-center gap-2 text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg font-medium transition"
-                      >
-                        <Download size={16} /> Reporte (Imágenes)
-                      </button>
+                      {/* Dropdown Descargar Reportes */}
+                      <div className="relative">
+                        <button 
+                          onClick={() => setOpenDropdownId(openDropdownId === act.ID ? null : act.ID)}
+                          className="flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg font-medium transition"
+                        >
+                          <Download size={16} /> Descargar Reportes 🔽
+                        </button>
+                        {openDropdownId === act.ID && (
+                          <div className="absolute top-full right-0 sm:left-0 sm:right-auto mt-2 z-50 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-1 overflow-hidden flex flex-col">
+                            <button 
+                              onClick={() => { exportExcelPDF(act.ID, act.Name, act.Amount); setOpenDropdownId(null); }}
+                              className="flex items-center gap-3 text-sm hover:bg-gray-50 text-gray-700 px-4 py-3 w-full text-left transition border-b border-gray-50 last:border-0"
+                            >
+                              <FileSpreadsheet size={16} className="text-green-600" /> PDF
+                            </button>
+                            <button 
+                              onClick={() => { exportImage(act.ID, act.Name); setOpenDropdownId(null); }}
+                              className="flex items-center gap-3 text-sm hover:bg-gray-50 text-gray-700 px-4 py-3 w-full text-left transition border-b border-gray-50 last:border-0"
+                            >
+                              <ImageLucide size={16} className="text-cyan-600" /> Imagen
+                            </button>
+                            <button 
+                              onClick={() => { exportPDF(act.ID, act.Name); setOpenDropdownId(null); }}
+                              className="flex items-center gap-3 text-sm hover:bg-gray-50 text-gray-700 px-4 py-3 w-full text-left transition border-b border-gray-50 last:border-0"
+                            >
+                              <Download size={16} className="text-indigo-600" /> PDF con comprobantes
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       {role === 'admin' && (
                         <button 
                           onClick={() => { setActivityToDelete(act); setShowDeleteModal(true); setDeleteAdminPassword(''); setDeleteError(''); }}
