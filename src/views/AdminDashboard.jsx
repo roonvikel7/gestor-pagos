@@ -1526,7 +1526,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                       <span className="font-medium text-sm text-gray-800 truncate flex-1">{s.Name}</span>
                       {isCash ? (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded font-bold">Efectivo</span>
+                          <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded font-bold border border-slate-300">Efectivo</span>
                           <button 
                             onClick={() => handleRemoveCashPayment(s.ID)}
                             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition"
