@@ -969,16 +969,11 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                     <div>
                       <h4 className="font-bold text-gray-900 flex items-center gap-2">
                         {act.Name}
-                        {act.Status === 'paused' && (
-                          <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full border border-yellow-200 font-bold">
-                            Pausada
-                          </span>
-                        )}
-                        {act.Deadline && new Date(act.Deadline) < new Date() && (
+                        {act.Status === 'paused' || (act.Deadline && new Date(act.Deadline) < new Date()) ? (
                           <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full border border-red-200 font-bold">
                             Cerrada
                           </span>
-                        )}
+                        ) : null}
                       </h4>
                       <p className="text-sm text-gray-500 mb-1">Monto: S/ {act.Amount}</p>
                       {act.Deadline && (
@@ -993,13 +988,13 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                         <button
                           onClick={() => handleTogglePause(act.ID)}
                           disabled={isSubmitting}
-                          title={act.Status === 'paused' ? 'Reanudar actividad' : 'Pausar actividad'}
+                          title={act.Status === 'paused' ? 'Abrir actividad' : 'Cerrar actividad'}
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${act.Status === 'paused' ? 'bg-gray-300' : 'bg-green-500'} mx-2`}
                         >
                           <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${act.Status === 'paused' ? 'translate-x-1' : 'translate-x-6'}`} />
                         </button>
                         <span className="text-xs font-bold text-gray-600 mr-2 w-14">
-                          {act.Status === 'paused' ? 'Pausada' : 'Activa'}
+                          {act.Status === 'paused' ? 'Cerrada' : 'Activa'}
                         </span>
                         
                         <div className="w-px h-6 bg-gray-200 mx-1"></div>
