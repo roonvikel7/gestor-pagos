@@ -1413,8 +1413,8 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
 
       {/* Exemption Modal */}
       {showExemptionModal && selectedActForExemption && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowExemptionModal(false)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold">Marcar No Participa</h3>
               <button onClick={() => setShowExemptionModal(false)} className="text-gray-500 hover:text-gray-800">
@@ -1490,8 +1490,8 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
 
       {/* Cash Payment Modal */}
       {showCashPaymentModal && selectedActForCashPayment && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4" onClick={() => setShowCashPaymentModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-emerald-50">
               <h3 className="text-xl font-bold text-emerald-900 flex items-center gap-2">
                 <Banknote size={20} className="text-emerald-600" />
@@ -1610,8 +1610,8 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
 
       {/* Deadline Modal */}
       {showDeadlineModal && activityToSetDeadline && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowDeadlineModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-blue-50">
               <h3 className="text-xl font-bold text-blue-900 flex items-center gap-2">
                 <CalendarClock size={20} className="text-blue-600" />
@@ -1671,8 +1671,8 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
 
       {/* Delete Modal */}
       {showDeleteModal && activityToDelete && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-red-50">
               <h3 className="text-xl font-bold text-red-800">Eliminar Actividad</h3>
               <button onClick={() => setShowDeleteModal(false)} className="text-red-500 hover:bg-red-100 p-2 rounded-full transition">
@@ -1712,8 +1712,8 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       
       {/* Reset Password Modal */}
       {resetModalStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setResetModalStudent(null)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold">Modificar Contraseña</h3>
               <button onClick={() => setResetModalStudent(null)} className="text-gray-500 hover:text-gray-800">
