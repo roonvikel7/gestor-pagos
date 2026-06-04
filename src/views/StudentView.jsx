@@ -366,6 +366,7 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
           <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Actividades Pagadas</p>
           <p className="text-2xl font-bold text-green-600 mt-1">{
             activities.filter(act => 
+              act.Status !== 'paused' && 
               !(globalData?.exemptions || []).some(e => e.StudentID === selectedStudent && e.ActivityID === act.ID)
             ).filter(act => (globalData?.payments || []).some(p => p.StudentID === selectedStudent && p.ActivityID === act.ID))
              .length
