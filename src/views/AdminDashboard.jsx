@@ -1536,7 +1536,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                           </button>
                         </div>
                       ) : payment ? (
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold">Transferencia</span>
+                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded font-bold">Yape</span>
                       ) : (
                         <button 
                           onClick={() => handleAddCashPayment(s.ID)}
