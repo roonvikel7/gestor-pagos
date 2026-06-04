@@ -962,27 +962,41 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
               </form>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
-              <ul className="divide-y">
-                {activities.map(act => (
-                  <li key={act.ID} className={`p-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 transition gap-4 ${act.Status === 'paused' ? 'opacity-60 bg-gray-100 grayscale-[30%]' : ''}`}>
-                    <div>
-                      <h4 className="font-bold text-gray-900 flex items-center gap-2">
-                        {act.Name}
-                        {act.Status === 'paused' || (act.Deadline && new Date(act.Deadline) < new Date()) ? (
-                          <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full border border-red-200 font-bold">
-                            Cerrada
-                          </span>
-                        ) : null}
-                      </h4>
-                      <p className="text-sm text-gray-500 mb-1">Monto: S/ {act.Amount}</p>
-                      {act.Deadline && (
-                        <div className="mt-1.5 mb-1 inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-semibold shadow-sm">
-                          <CalendarClock size={14} />
-                          Cierre programado: {new Date(act.Deadline).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}
+            {(() => {
+              const sortedActivities = [...activities].sort((a, b) => new Date(b.Timestamp || 0) - new Date(a.Timestamp || 0));
+              const activeActs = sortedActivities.filter(act => !(act.Status === 'paused' || (act.Deadline && new Date(act.Deadline) < new Date())));
+              const closedActs = sortedActivities.filter(act => (act.Status === 'paused' || (act.Deadline && new Date(act.Deadline) < new Date())));
+              
+              const renderList = (list, isClosed) => (
+                <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden ${isClosed ? 'opacity-80 grayscale-[20%]' : ''}`}>
+                  <ul className="divide-y">
+                    {list.map(act => (
+                      <li key={act.ID} className={`p-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 transition gap-4 ${isClosed ? 'bg-gray-50/50' : ''}`}>
+                        <div>
+                          <h4 className="font-bold text-gray-900 flex items-center gap-2">
+                            {act.Name}
+                            {isClosed ? (
+                              <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full border border-red-200 font-bold">
+                                Cerrada
+                              </span>
+                            ) : null}
+                          </h4>
+                          <p className="text-xs text-gray-500 font-medium mb-1 mt-0.5">
+                            Creada el: {new Date(act.Timestamp || new Date()).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}
+                          </p>
+                          <p className="text-sm text-gray-700 mb-1">Monto: S/ {act.Amount}</p>
+                          {isClosed && act.Deadline ? (
+                            <div className="mt-1 inline-flex items-center gap-1 text-red-400 text-xs font-semibold">
+                              <CalendarClock size={12} />
+                              Cierre programado: {new Date(act.Deadline).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </div>
+                          ) : act.Deadline ? (
+                            <div className="mt-1.5 mb-1 inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-semibold shadow-sm">
+                              <CalendarClock size={14} />
+                              Cierre programado: {new Date(act.Deadline).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </div>
+                          ) : null}
                         </div>
-                      )}
-                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                       {/* Compact State & Schedule Control */}
                       <div className="flex items-center bg-white border shadow-sm rounded-lg p-1 mr-1">
@@ -1071,13 +1085,29 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                         </button>
                       )}
                     </div>
-                  </li>
-                ))}
-                {activities.length === 0 && (
-                  <li className="p-8 text-center text-gray-500">No hay actividades creadas.</li>
-                )}
-              </ul>
-            </div>
+                      </li>
+                    ))}
+                    {list.length === 0 && (
+                      <li className="p-8 text-center text-gray-500">No hay actividades en esta sección.</li>
+                    )}
+                  </ul>
+                </div>
+              );
+
+              return (
+                <div className="space-y-6">
+                  {renderList(activeActs, false)}
+                  {closedActs.length > 0 && (
+                    <div className="mt-8">
+                      <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-400"></span> Actividades Cerradas
+                      </h3>
+                      {renderList(closedActs, true)}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             
             {/* Hidden Templates for Image Generation */}
             <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
