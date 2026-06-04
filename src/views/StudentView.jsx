@@ -463,9 +463,18 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
               {activities.filter(act => 
                 act.Status !== 'paused' && 
                 !(globalData?.exemptions || []).some(e => e.StudentID === selectedStudent && e.ActivityID === act.ID)
-              ).map(act => (
-                <option key={act.ID} value={act.ID}>{act.Name} - S/ {act.Amount}</option>
-              ))}
+              ).map(act => {
+                const isPaid = (globalData?.payments || []).some(p => p.StudentID === selectedStudent && p.ActivityID === act.ID);
+                return (
+                  <option 
+                    key={act.ID} 
+                    value={act.ID}
+                    style={{ color: isPaid ? '#16a34a' : '#ea580c', fontWeight: '500' }}
+                  >
+                    {isPaid ? "✅" : "⏳"} {act.Name} - S/ {act.Amount} {isPaid ? "(Pagado)" : "(Pendiente)"}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
