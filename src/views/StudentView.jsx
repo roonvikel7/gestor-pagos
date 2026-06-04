@@ -36,14 +36,45 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
   const [lazyImage, setLazyImage] = useState(null);
   const [isFetchingImage, setIsFetchingImage] = useState(false);
 
+  const [inlineImage, setInlineImage] = useState(null);
+  const [isFetchingInline, setIsFetchingInline] = useState(false);
+
+  useEffect(() => {
+    setInlineImage(null);
+    const p = (globalData?.payments || []).find(pay => pay.StudentID === selectedStudent && pay.ActivityID === selectedActivity);
+    if (p && p.ImageBase64 !== 'EFECTIVO') {
+      setIsFetchingInline(true);
+      fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'getPaymentImage', studentId: selectedStudent, activityId: selectedActivity })
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.status === 'success') {
+          setInlineImage(d.data.imageBase64);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setIsFetchingInline(false));
+    }
+  }, [selectedActivity, selectedStudent, globalData, scriptUrl]);
+
   const openImageModal = async (actId) => {
     setIsImageModalOpen(true);
-    setLazyImage(null);
-    setIsFetchingImage(true);
     
     const url = new URL(window.location);
     url.searchParams.set('modal', 'image');
     window.history.pushState({}, '', url);
+
+    if (actId === selectedActivity && inlineImage) {
+      setLazyImage(inlineImage);
+      setIsFetchingImage(false);
+      return;
+    }
+
+    setLazyImage(null);
+    setIsFetchingImage(true);
 
     try {
       const res = await fetch(scriptUrl, {
@@ -509,13 +540,25 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                       <span className="font-bold text-lg text-center">Pago realizado en efectivo</span>
                       <span className="text-sm mt-2 opacity-90 text-center">Registrado por la tesorera</span>
                     </div>
-                  ) : (
+                  ) : isFetchingInline ? (
+                    <div className="w-full h-48 bg-gray-50 border rounded-xl flex flex-col items-center justify-center mb-4 animate-pulse">
+                       <svg className="animate-spin h-8 w-8 mb-2 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                       </svg>
+                       <span className="text-gray-500 font-medium text-sm">Cargando comprobante...</span>
+                    </div>
+                  ) : inlineImage ? (
                     <img 
-                      src={getExistingPayment()?.ImageBase64} 
+                      src={inlineImage} 
                       alt="Comprobante" 
-                      className="w-full max-h-64 object-contain rounded border mb-4 bg-white cursor-pointer hover:opacity-90 transition shadow-sm" 
-                      onClick={openImageModal}
+                      className="w-full max-h-64 object-contain rounded-xl border mb-4 bg-white cursor-pointer hover:opacity-90 transition shadow-sm" 
+                      onClick={() => openImageModal(selectedActivity)}
                     />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-50 border rounded-xl flex items-center justify-center mb-4">
+                       <span className="text-gray-500 text-sm font-medium">Imagen no disponible</span>
+                    </div>
                   )}
                   
                   {!isEditing && !isClosed && getExistingPayment()?.ImageBase64 !== 'EFECTIVO' ? (
