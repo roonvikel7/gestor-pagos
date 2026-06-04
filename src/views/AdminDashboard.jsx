@@ -977,9 +977,10 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                       </h4>
                       <p className="text-sm text-gray-500 mb-1">Monto: S/ {act.Amount}</p>
                       {act.Deadline && (
-                        <p className="text-xs text-gray-500 font-medium">
-                          Cierre: {new Date(act.Deadline).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}
-                        </p>
+                        <div className="mt-1.5 mb-1 inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-semibold shadow-sm">
+                          <CalendarClock size={14} />
+                          Cierre programado: {new Date(act.Deadline).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </div>
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -1000,9 +1001,14 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                         <div className="w-px h-6 bg-gray-200 mx-1"></div>
                         
                         <button 
-                          onClick={() => { setActivityToSetDeadline(act); setDeadlineValue(act.Deadline || ''); setShowDeadlineModal(true); }}
+                          onClick={() => { 
+                            setActivityToSetDeadline(act); 
+                            const localDateStr = act.Deadline ? new Date(new Date(act.Deadline).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
+                            setDeadlineValue(localDateStr); 
+                            setShowDeadlineModal(true); 
+                          }}
                           title="Programar cierre"
-                          className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-md transition ml-1"
+                          className={`flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium rounded-md transition ml-1 ${act.Deadline ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' : 'text-blue-600 hover:bg-blue-50'}`}
                         >
                           <CalendarClock size={16} /> Cierre
                         </button>
@@ -1372,10 +1378,19 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
               </button>
             </div>
             <div className="p-6">
-              <p className="text-gray-700 mb-4 text-sm">
-                Selecciona la fecha y hora límite para la actividad <strong>{activityToSetDeadline.Name}</strong>. 
-                Dejar vacío para mantenerla siempre abierta.
-              </p>
+              {activityToSetDeadline.Deadline ? (
+                <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-indigo-800">
+                    Esta actividad ya tiene un cierre programado para el <strong>{new Date(activityToSetDeadline.Deadline).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })}</strong>.
+                  </p>
+                  <p className="text-xs text-indigo-600 mt-1">Puedes modificar la fecha abajo o borrarla para mantener la actividad siempre abierta.</p>
+                </div>
+              ) : (
+                <p className="text-gray-700 mb-4 text-sm">
+                  Selecciona la fecha y hora límite para la actividad <strong>{activityToSetDeadline.Name}</strong>. 
+                  Dejar vacío para mantenerla siempre abierta.
+                </p>
+              )}
               <form onSubmit={handleSetDeadline} className="space-y-4">
                 <div>
                   <input
