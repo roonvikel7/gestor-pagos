@@ -740,9 +740,12 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
           </div>
         )}
       </div>
-
       {isImageModalOpen && (
-        <ImageModal base64Image={getExistingPayment()?.ImageBase64} onClose={closeImageModal} />
+        <ImageModal 
+          base64Image={getExistingPayment()?.ImageBase64 || lazyImage} 
+          isLoading={isFetchingImage} 
+          onClose={closeImageModal} 
+        />
       )}
     </div>
   );
