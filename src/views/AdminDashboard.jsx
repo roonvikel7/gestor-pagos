@@ -991,9 +991,9 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                       </button>
                       <button 
                         onClick={() => handleCopyActivityLink(act)}
-                        className="flex items-center gap-2 text-sm bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 px-3 py-2 rounded-lg font-medium transition"
+                        className="flex items-center gap-2 text-sm bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-2 rounded-lg font-medium transition shadow-sm"
                       >
-                        <ClipboardCopy size={16} /> Copiar Enlace
+                        <ClipboardCopy size={16} /> Mensaje WA
                       </button>
                       <button 
                         onClick={() => { setSelectedActForExemption(act); setShowExemptionModal(true); }}
@@ -1005,7 +1005,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                         onClick={() => shareToWhatsApp(act.ID, act.Name)}
                         className="flex items-center gap-2 text-sm bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-2 rounded-lg font-medium transition shadow-sm"
                       >
-                        <MessageCircle size={16} /> WhatsApp
+                        <MessageCircle size={16} /> Reporte WA
                       </button>
                       {/* Dropdown Descargar Reportes */}
                       <div className="relative">
