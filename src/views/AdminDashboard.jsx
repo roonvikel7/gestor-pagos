@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut, Cake, Trash2, CalendarClock, Lock } from 'lucide-react';
+import { ArrowLeft, Check, X, RefreshCw, Plus, Users, ClipboardCopy, Image as ImageIcon, Download, UserMinus, FileSpreadsheet, Image as ImageLucide, MessageCircle, Pause, Play, LogOut, Cake, Trash2, CalendarClock, Lock, Banknote } from 'lucide-react';
 import ImageModal from '../components/ImageModal';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -122,6 +122,11 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
   const [studentListText, setStudentListText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
+
+  // Cash Payment States
+  const [showCashPaymentModal, setShowCashPaymentModal] = useState(false);
+  const [selectedActForCashPayment, setSelectedActForCashPayment] = useState(null);
+  const [searchCashStudent, setSearchCashStudent] = useState('');
 
   // Delete Activity State
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -451,6 +456,59 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     setIsSubmitting(false);
   };
 
+  const handleAddCashPayment = async (studentId) => {
+    if(!confirm('¿Confirmas que recibiste el pago en efectivo de este estudiante?')) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'addPayment',
+          activityId: selectedActForCashPayment.ID,
+          studentId: studentId,
+          imageBase64: 'EFECTIVO'
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        alert('Pago en efectivo registrado');
+        fetchGlobalData();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    } catch(err) {
+      alert('Error de red al registrar pago');
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleRemoveCashPayment = async (studentId) => {
+    if(!confirm('¿Estás segura de eliminar este registro de pago en efectivo?')) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'removePayment',
+          activityId: selectedActForCashPayment.ID,
+          studentId: studentId
+        })
+      });
+      const data = await res.json();
+      if(data.status === 'success') {
+        alert('Registro eliminado');
+        fetchGlobalData();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    } catch(err) {
+      alert('Error de red al eliminar registro');
+    }
+    setIsSubmitting(false);
+  };
+
   const handleTogglePause = async (actId) => {
     setIsSubmitting(true);
     const act = activities.find(a => a.ID === actId);
@@ -532,11 +590,16 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
         if (payment) estado = 'Pagó';
         if (exemption) estado = 'Exonerado';
         
+        let comprobanteData = '';
+        if (payment) {
+          comprobanteData = payment.ImageBase64 === 'EFECTIVO' ? 'EFECTIVO' : payment.ImageBase64;
+        }
+
         return [
           std.Name,
           estado,
           dateStr,
-          payment ? payment.ImageBase64 : ''
+          comprobanteData
         ];
       });
       
@@ -1081,6 +1144,12 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                         <UserMinus size={16} /> Exonerados
                       </button>
                       <button 
+                        onClick={() => { setSelectedActForCashPayment(act); setShowCashPaymentModal(true); }}
+                        className="flex items-center gap-2 text-sm bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg font-medium transition"
+                      >
+                        <Banknote size={16} /> Pago Efectivo
+                      </button>
+                      <button 
                         onClick={() => shareToWhatsApp(act.ID, act.Name)}
                         className="flex items-center gap-2 text-sm bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-2 rounded-lg font-medium transition shadow-sm"
                       >
@@ -1396,6 +1465,75 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                     </li>
                   );
                 })}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cash Payment Modal */}
+      {showCashPaymentModal && selectedActForCashPayment && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-emerald-50">
+              <h3 className="text-xl font-bold text-emerald-900 flex items-center gap-2">
+                <Banknote size={20} className="text-emerald-600" />
+                Registrar Pago en Efectivo
+              </h3>
+              <button onClick={() => setShowCashPaymentModal(false)} className="text-emerald-500 hover:bg-emerald-100 p-2 rounded-full transition">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <p className="text-gray-600 mb-4 text-sm">
+                Selecciona al estudiante que realizó el pago en efectivo para la actividad <strong>{selectedActForCashPayment.Name}</strong>.
+              </p>
+              
+              <div className="mb-4">
+                <input 
+                  type="text" 
+                  placeholder="Buscar estudiante por nombre..."
+                  value={searchCashStudent}
+                  onChange={(e) => setSearchCashStudent(e.target.value)}
+                  className="w-full border rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              <ul className="space-y-2 max-h-60 overflow-y-auto pr-2 border rounded-xl p-2 bg-gray-50">
+                {students.filter(s => s.Name && s.Name.toLowerCase().includes(searchCashStudent.toLowerCase())).sort((a,b) => a.Name.localeCompare(b.Name)).map(s => {
+                  const payment = payments.find(p => p.StudentID === s.ID && p.ActivityID === selectedActForCashPayment.ID);
+                  const isCash = payment?.ImageBase64 === 'EFECTIVO';
+                  
+                  return (
+                    <li key={s.ID} className="bg-white p-3 rounded-lg border shadow-sm flex items-center justify-between gap-2">
+                      <span className="font-medium text-sm text-gray-800 truncate flex-1">{s.Name}</span>
+                      {isCash ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded font-bold">Efectivo</span>
+                          <button 
+                            onClick={() => handleRemoveCashPayment(s.ID)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition"
+                            title="Deshacer pago en efectivo"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ) : payment ? (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold">Transferencia</span>
+                      ) : (
+                        <button 
+                          onClick={() => handleAddCashPayment(s.ID)}
+                          className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded font-bold transition"
+                        >
+                          Marcar Pago
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+                {students.filter(s => s.Name && s.Name.toLowerCase().includes(searchCashStudent.toLowerCase())).length === 0 && (
+                  <li className="p-4 text-center text-gray-500 text-sm">No se encontraron estudiantes.</li>
+                )}
               </ul>
             </div>
           </div>

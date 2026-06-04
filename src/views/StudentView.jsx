@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, ArrowLeft, CheckCircle2, Loader2, Image as ImageIcon, MessageCircle, X, User, LogOut, CalendarClock, Lock } from 'lucide-react';
+import { ArrowLeft, Check, Image as ImageIcon, CheckCircle2, AlertCircle, RefreshCw, Upload, LogOut, Banknote, MessageCircle, X, User, CalendarClock, Lock, Loader2 } from 'lucide-react';
 import { compressImage } from '../utils/imageCompression';
 import ImageModal from '../components/ImageModal';
 import Select from 'react-select';
@@ -427,15 +427,23 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                     <div key={act.ID} className="border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-sm transition">
                       <div>
                         <h4 className="font-bold text-gray-900">{act.Name}</h4>
-                        <p className="text-sm text-green-600 font-medium mt-1">S/ {act.Amount} - Pagado</p>
-                        {dateStr && <p className="text-xs text-gray-500 mt-1">Enviado: {dateStr}</p>}
+                        <p className="text-sm text-green-600 font-medium mt-1">
+                          S/ {act.Amount} - Pagado {payment?.ImageBase64 === 'EFECTIVO' ? 'en Efectivo' : ''}
+                        </p>
+                        {dateStr && <p className="text-xs text-gray-500 mt-1">Registrado: {dateStr}</p>}
                       </div>
-                      <button 
-                        onClick={() => { setSelectedActivity(act.ID); openImageModal(act.ID); }}
-                        className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium transition flex items-center justify-center gap-2"
-                      >
-                        <ImageIcon size={16} /> Ver comprobante
-                      </button>
+                      {payment?.ImageBase64 === 'EFECTIVO' ? (
+                        <div className="text-sm bg-emerald-50 border border-emerald-200 text-emerald-700 py-2 px-4 rounded-lg font-bold flex items-center justify-center gap-2">
+                          <CheckCircle2 size={16} /> Verificado
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={() => { setSelectedActivity(act.ID); openImageModal(act.ID); }}
+                          className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium transition flex items-center justify-center gap-2"
+                        >
+                          <ImageIcon size={16} /> Ver comprobante
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -488,14 +496,23 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                 
                 <div className="mt-4 border-t border-green-200 pt-4 text-left">
                   <p className="text-sm font-bold text-green-800 mb-2 text-center">Comprobante Actual:</p>
-                  <img 
-                    src={getExistingPayment()?.ImageBase64} 
-                    alt="Comprobante" 
-                    className="w-full max-h-64 object-contain rounded border mb-4 bg-white cursor-pointer hover:opacity-90 transition shadow-sm" 
-                    onClick={openImageModal}
-                  />
                   
-                  {!isEditing && !isClosed ? (
+                  {getExistingPayment()?.ImageBase64 === 'EFECTIVO' ? (
+                    <div className="w-full bg-emerald-100 text-emerald-800 p-8 rounded-xl flex flex-col items-center justify-center mb-4">
+                      <Banknote size={48} className="mb-2 opacity-80" />
+                      <span className="font-bold text-lg text-center">Pago realizado en efectivo</span>
+                      <span className="text-sm mt-2 opacity-90 text-center">Registrado por la tesorera</span>
+                    </div>
+                  ) : (
+                    <img 
+                      src={getExistingPayment()?.ImageBase64} 
+                      alt="Comprobante" 
+                      className="w-full max-h-64 object-contain rounded border mb-4 bg-white cursor-pointer hover:opacity-90 transition shadow-sm" 
+                      onClick={openImageModal}
+                    />
+                  )}
+                  
+                  {!isEditing && !isClosed && getExistingPayment()?.ImageBase64 !== 'EFECTIVO' ? (
                     <button 
                       type="button"
                       onClick={() => setIsEditing(true)}
@@ -507,6 +524,10 @@ export default function StudentView({ setView, globalData, fetchGlobalData, scri
                   ) : !isEditing && isClosed ? (
                     <div className="w-full bg-gray-100 text-gray-500 font-medium py-3 px-4 rounded-lg text-center text-sm border border-gray-200">
                       El plazo para modificar este comprobante ha expirado.
+                    </div>
+                  ) : getExistingPayment()?.ImageBase64 === 'EFECTIVO' ? (
+                     <div className="w-full bg-emerald-50 text-emerald-700 font-medium py-3 px-4 rounded-lg text-center text-sm border border-emerald-200">
+                      Los pagos en efectivo no se pueden editar. Si hay un error, comunícate con la tesorera.
                     </div>
                   ) : (
                     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm mt-4">
