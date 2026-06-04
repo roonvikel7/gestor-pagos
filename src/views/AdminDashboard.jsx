@@ -1101,99 +1101,111 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                             </div>
                           ) : null}
                         </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {/* Compact State & Schedule Control */}
-                      <div className="flex items-center bg-white border shadow-sm rounded-lg p-1 mr-1">
-                        <button
-                          onClick={() => handleTogglePause(act.ID)}
-                          disabled={isSubmitting}
-                          title={act.Status === 'paused' ? 'Abrir actividad' : 'Cerrar actividad'}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${act.Status === 'paused' ? 'bg-gray-300' : 'bg-green-500'} mx-2`}
+                    <div className="flex flex-col gap-2 mt-4 md:mt-0 md:items-end">
+                      {/* Row 1: Estado y Gestión */}
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        {/* Compact State & Schedule Control */}
+                        <div className="flex items-center bg-white border shadow-sm rounded-lg p-1">
+                          <button
+                            onClick={() => handleTogglePause(act.ID)}
+                            disabled={isSubmitting}
+                            title={act.Status === 'paused' ? 'Abrir actividad' : 'Cerrar actividad'}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${act.Status === 'paused' ? 'bg-gray-300' : 'bg-green-500'} mx-2`}
+                          >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${act.Status === 'paused' ? 'translate-x-1' : 'translate-x-6'}`} />
+                          </button>
+                          <span className="text-xs font-bold text-gray-600 mr-2 w-14">
+                            {act.Status === 'paused' ? 'Cerrada' : 'Activa'}
+                          </span>
+                          
+                          <div className="w-px h-6 bg-gray-200 mx-1"></div>
+                          
+                          <button 
+                            onClick={() => { 
+                              setActivityToSetDeadline(act); 
+                              const localDateStr = act.Deadline ? new Date(new Date(act.Deadline).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
+                              setDeadlineValue(localDateStr); 
+                              setShowDeadlineModal(true); 
+                            }}
+                            title="Programar cierre"
+                            className={`flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium rounded-md transition ml-1 ${act.Deadline ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' : 'text-blue-600 hover:bg-blue-50'}`}
+                          >
+                            <CalendarClock size={16} /> Cierre
+                          </button>
+                        </div>
+
+                        <button 
+                          onClick={() => { setSelectedActForExemption(act); setShowExemptionModal(true); }}
+                          className="flex items-center gap-2 text-sm bg-orange-50 hover:bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-medium transition"
                         >
-                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${act.Status === 'paused' ? 'translate-x-1' : 'translate-x-6'}`} />
+                          <UserMinus size={16} /> Exonerados
                         </button>
-                        <span className="text-xs font-bold text-gray-600 mr-2 w-14">
-                          {act.Status === 'paused' ? 'Cerrada' : 'Activa'}
-                        </span>
-                        
-                        <div className="w-px h-6 bg-gray-200 mx-1"></div>
                         
                         <button 
-                          onClick={() => { 
-                            setActivityToSetDeadline(act); 
-                            const localDateStr = act.Deadline ? new Date(new Date(act.Deadline).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
-                            setDeadlineValue(localDateStr); 
-                            setShowDeadlineModal(true); 
-                          }}
-                          title="Programar cierre"
-                          className={`flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium rounded-md transition ml-1 ${act.Deadline ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' : 'text-blue-600 hover:bg-blue-50'}`}
+                          onClick={() => { setSelectedActForCashPayment(act); setShowCashPaymentModal(true); }}
+                          className="flex items-center gap-2 text-sm bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg font-medium transition"
                         >
-                          <CalendarClock size={16} /> Cierre
+                          <Banknote size={16} /> Pago Efectivo
                         </button>
-                      </div>
-                      <button 
-                        onClick={() => handleCopyActivityLink(act)}
-                        className="flex items-center gap-2 text-sm bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-2 rounded-lg font-medium transition shadow-sm"
-                      >
-                        <WhatsAppIcon /> Mensaje WA
-                      </button>
-                      <button 
-                        onClick={() => { setSelectedActForExemption(act); setShowExemptionModal(true); }}
-                        className="flex items-center gap-2 text-sm bg-orange-50 hover:bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-medium transition"
-                      >
-                        <UserMinus size={16} /> Exonerados
-                      </button>
-                      <button 
-                        onClick={() => { setSelectedActForCashPayment(act); setShowCashPaymentModal(true); }}
-                        className="flex items-center gap-2 text-sm bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg font-medium transition"
-                      >
-                        <Banknote size={16} /> Pago Efectivo
-                      </button>
-                      <button 
-                        onClick={() => shareToWhatsApp(act.ID, act.Name)}
-                        className="flex items-center gap-2 text-sm bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-2 rounded-lg font-medium transition shadow-sm"
-                      >
-                        <WhatsAppIcon /> Reporte WA
-                      </button>
-                      {/* Dropdown Descargar Reportes */}
-                      <div className="relative" data-dropdown>
-                        <button 
-                          onClick={() => setOpenDropdownId(openDropdownId === act.ID ? null : act.ID)}
-                          className="flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg font-medium transition"
-                        >
-                          <Download size={16} /> Descargar Reportes 🔽
-                        </button>
-                        {openDropdownId === act.ID && (
-                          <div className="absolute top-full right-0 sm:left-0 sm:right-auto mt-2 z-50 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-1 overflow-hidden flex flex-col">
-                            <button 
-                              onClick={() => { exportExcelPDF(act.ID, act.Name, act.Amount); setOpenDropdownId(null); }}
-                              className="flex items-center gap-3 text-sm hover:bg-gray-50 text-gray-700 px-4 py-3 w-full text-left transition border-b border-gray-50 last:border-0"
-                            >
-                              <FileSpreadsheet size={16} className="text-green-600" /> PDF
-                            </button>
-                            <button 
-                              onClick={() => { exportImage(act.ID, act.Name); setOpenDropdownId(null); }}
-                              className="flex items-center gap-3 text-sm hover:bg-gray-50 text-gray-700 px-4 py-3 w-full text-left transition border-b border-gray-50 last:border-0"
-                            >
-                              <ImageLucide size={16} className="text-cyan-600" /> Imagen
-                            </button>
-                            <button 
-                              onClick={() => { exportPDF(act.ID, act.Name); setOpenDropdownId(null); }}
-                              className="flex items-center gap-3 text-sm hover:bg-gray-50 text-gray-700 px-4 py-3 w-full text-left transition border-b border-gray-50 last:border-0"
-                            >
-                              <Download size={16} className="text-indigo-600" /> PDF con comprobantes
-                            </button>
-                          </div>
+
+                        {role === 'admin' && (
+                          <button 
+                            onClick={() => { setActivityToDelete(act); setShowDeleteModal(true); setDeleteAdminPassword(''); setDeleteError(''); }}
+                            className="flex items-center gap-2 text-sm bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-lg font-medium transition"
+                          >
+                            <Trash2 size={16} /> Eliminar
+                          </button>
                         )}
                       </div>
-                      {role === 'admin' && (
+
+                      {/* Row 2: Comunicación y Descargas */}
+                      <div className="flex flex-wrap items-center justify-end gap-2">
                         <button 
-                          onClick={() => { setActivityToDelete(act); setShowDeleteModal(true); setDeleteAdminPassword(''); setDeleteError(''); }}
-                          className="flex items-center gap-2 text-sm bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-lg font-medium transition"
+                          onClick={() => handleCopyActivityLink(act)}
+                          className="flex items-center gap-2 text-sm bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-2 rounded-lg font-medium transition shadow-sm"
                         >
-                          <Trash2 size={16} /> Eliminar
+                          <WhatsAppIcon /> Mensaje WA
                         </button>
-                      )}
+                        
+                        <button 
+                          onClick={() => shareToWhatsApp(act.ID, act.Name)}
+                          className="flex items-center gap-2 text-sm bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-2 rounded-lg font-medium transition shadow-sm"
+                        >
+                          <WhatsAppIcon /> Reporte WA
+                        </button>
+                        
+                        {/* Dropdown Descargar Reportes */}
+                        <div className="relative" data-dropdown>
+                          <button 
+                            onClick={() => setOpenDropdownId(openDropdownId === act.ID ? null : act.ID)}
+                            className="flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg font-medium transition"
+                          >
+                            <Download size={16} /> Descargar Reportes 🔽
+                          </button>
+                          {openDropdownId === act.ID && (
+                            <div className="absolute top-full right-0 sm:left-0 sm:right-auto mt-2 z-50 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-1 overflow-hidden flex flex-col">
+                              <button 
+                                onClick={() => { exportExcelPDF(act.ID, act.Name, act.Amount); setOpenDropdownId(null); }}
+                                className="flex items-center gap-3 text-sm hover:bg-gray-50 text-gray-700 px-4 py-3 w-full text-left transition border-b border-gray-50 last:border-0"
+                              >
+                                <FileSpreadsheet size={16} className="text-green-600" /> PDF
+                              </button>
+                              <button 
+                                onClick={() => { exportImage(act.ID, act.Name); setOpenDropdownId(null); }}
+                                className="flex items-center gap-3 text-sm hover:bg-gray-50 text-gray-700 px-4 py-3 w-full text-left transition border-b border-gray-50 last:border-0"
+                              >
+                                <ImageLucide size={16} className="text-cyan-600" /> Imagen
+                              </button>
+                              <button 
+                                onClick={() => { exportPDF(act.ID, act.Name); setOpenDropdownId(null); }}
+                                className="flex items-center gap-3 text-sm hover:bg-gray-50 text-gray-700 px-4 py-3 w-full text-left transition border-b border-gray-50 last:border-0"
+                              >
+                                <Download size={16} className="text-indigo-600" /> PDF con comprobantes
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                       </li>
                     ))}
