@@ -440,6 +440,9 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
 
   const handleTogglePause = async (actId) => {
     setIsSubmitting(true);
+    const act = activities.find(a => a.ID === actId);
+    const isCurrentlyPaused = act?.Status === 'paused';
+
     try {
       const res = await fetch(scriptUrl, {
         method: 'POST',
@@ -451,12 +454,37 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
       });
       const data = await res.json();
       if(data.status === 'success') {
+        // If we just paused it and it didn't have a deadline, record current time as the closing date
+        if (!isCurrentlyPaused && (!act.Deadline || new Date(act.Deadline) > new Date())) {
+          await fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'setActivityDeadline',
+              activityId: actId,
+              deadline: new Date().toISOString()
+            })
+          });
+        }
+        // If we just un-paused it, clear the closing date so it's fresh
+        if (isCurrentlyPaused) {
+          await fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'setActivityDeadline',
+              activityId: actId,
+              deadline: ''
+            })
+          });
+        }
+        
         fetchGlobalData();
       } else {
         alert('Error: ' + data.message);
       }
     } catch(err) {
-      alert('Error de red al pausar actividad');
+      alert('Error de red al cambiar estado de actividad');
     }
     setIsSubmitting(false);
   };
@@ -988,7 +1016,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                           {isClosed ? (
                             <div className="mt-1 inline-flex items-center gap-1 text-red-400 text-xs font-semibold">
                               <CalendarClock size={12} />
-                              Fecha de cierre: {act.Deadline ? new Date(act.Deadline).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' }) : 'Cierre manual'}
+                              Fecha de cierre: {act.Deadline ? new Date(act.Deadline).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha registrada'}
                             </div>
                           ) : act.Deadline ? (
                             <div className="mt-1.5 mb-1 inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-semibold shadow-sm">
