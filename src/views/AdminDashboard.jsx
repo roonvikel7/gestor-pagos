@@ -280,8 +280,8 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
     setIsSubmitting(false);
   };
 
-  const handleSetDeadline = async (e) => {
-    e.preventDefault();
+  const handleSetDeadline = async (e, forceClear = false) => {
+    if (e) e.preventDefault();
     setIsSubmitting(true);
     setMsg({ type: '', text: '' });
     try {
@@ -291,7 +291,7 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
         body: JSON.stringify({
           action: 'setActivityDeadline',
           activityId: activityToSetDeadline.ID,
-          deadline: deadlineValue
+          deadline: forceClear ? '' : deadlineValue
         })
       });
       const data = await res.json();
@@ -1401,6 +1401,17 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                   />
                 </div>
                 <div className="flex gap-3 mt-6">
+                  {activityToSetDeadline.Deadline && (
+                    <button 
+                      type="button" 
+                      onClick={() => handleSetDeadline(null, true)} 
+                      disabled={isSubmitting} 
+                      className="px-4 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold transition disabled:opacity-50"
+                      title="Eliminar el cierre programado"
+                    >
+                      Borrar
+                    </button>
+                  )}
                   <button type="button" onClick={() => setShowDeadlineModal(false)} className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition">
                     Cancelar
                   </button>
