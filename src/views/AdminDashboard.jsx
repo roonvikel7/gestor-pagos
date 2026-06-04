@@ -1023,12 +1023,6 @@ export default function AdminDashboard({ setView, globalData, fetchGlobalData, s
                       >
                         <Download size={16} /> Reporte (Imágenes)
                       </button>
-                      <button 
-                        onClick={() => copyLink(act.ID)}
-                        className="flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg font-medium transition"
-                      >
-                        <ClipboardCopy size={16} /> Copiar Enlace
-                      </button>
                       {role === 'admin' && (
                         <button 
                           onClick={() => { setActivityToDelete(act); setShowDeleteModal(true); setDeleteAdminPassword(''); setDeleteError(''); }}
